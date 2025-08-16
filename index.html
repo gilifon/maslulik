@@ -404,11 +404,46 @@
             const dayDiv = document.createElement('div');
             dayDiv.className = 'bg-gray-900 rounded-lg p-4 shadow w-full border border-gray-600 text-gray-800';
             dayDiv.setAttribute('draggable','true'); dayDiv.setAttribute('data-day-idx', dayIdx);
-            dayDiv.addEventListener('dragstart', function(e) { e.dataTransfer.setData('dayIdx', dayIdx); dayDiv.classList.add('opacity-50'); });
+            dayDiv.addEventListener('dragstart', function(e) { 
+                e.dataTransfer.setData('dayIdx', dayIdx); 
+                e.dataTransfer.setData('type', 0); // 0 for day
+                dayDiv.classList.add('opacity-50'); 
+            });
             dayDiv.addEventListener('dragend', function(e) { dayDiv.classList.remove('opacity-50'); });
             dayDiv.addEventListener('dragover', function(e) { e.preventDefault(); dayDiv.classList.add('ring-2','ring-blue-400'); });
             dayDiv.addEventListener('dragleave', function(e) { dayDiv.classList.remove('ring-2','ring-blue-400'); });
-            dayDiv.addEventListener('drop', function(e) { e.preventDefault(); dayDiv.classList.remove('ring-2','ring-blue-400'); const fromIdx = parseInt(e.dataTransfer.getData('dayIdx')); const toIdx = dayIdx; if (fromIdx !== toIdx) { let originalFirstDow = placesData[0] && placesData[0].dow ? placesData[0].dow : ''; const moved = placesData.splice(fromIdx,1)[0]; placesData.splice(toIdx,0,moved); if (toIdx === 0 && originalFirstDow) placesData[0].dow = originalFirstDow; renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); } });
+            dayDiv.addEventListener('drop', function(e) { 
+                console.log('Day drop event');
+                e.preventDefault(); 
+                e.stopPropagation();
+                dayDiv.classList.remove('ring-2','ring-blue-400'); 
+                const fromIdx = parseInt(e.dataTransfer.getData('dayIdx')); 
+                const dataType = parseInt(e.dataTransfer.getData('type')); 
+                const toIdx = dayIdx;
+                if (dataType === 1) {
+                    // moving attraction, not day
+                    const attrIdx = parseInt(e.dataTransfer.getData('attrIdx'));
+                    console.log(`Reordering attraction ${attrIdx} from day ${fromIdx} to day ${toIdx}`);
+                    const moved = placesData[fromIdx].attractions.splice(attrIdx,1)[0]; 
+                    console.log(moved.name, moved.lat, moved.lng, moved.url, moved.time);
+                    if (!placesData[dayIdx].attractions) placesData[dayIdx].attractions = [];
+                    placesData[toIdx].attractions.push(moved); 
+                    renderEditor(); 
+                    refreshMapDebounced(); 
+                    saveTripToStorageDebounced(); 
+                    return;
+                }
+                if (fromIdx !== toIdx) { 
+                    let originalFirstDow = placesData[0] && placesData[0].dow ? placesData[0].dow : ''; 
+                    const moved = placesData.splice(fromIdx,1)[0]; 
+                    placesData.splice(toIdx,0,moved); 
+                    if (toIdx === 0 && originalFirstDow) placesData[0].dow = originalFirstDow; 
+                    renderEditor(); 
+                    refreshMapDebounced(); 
+                    saveTripToStorageDebounced(); 
+                } 
+                
+            });
             dayObj.day = dayIdx + 1;
             if (dayIdx === 0) {
                 dayDiv.innerHTML = `
@@ -454,23 +489,52 @@
         }
         attractions.forEach((attr, attrIdx) => {
             const attrDiv = document.createElement('div'); attrDiv.className = 'flex items-center gap-2 bg-gray-800 text-gray-300 rounded px-2 py-1 mb-1 w-full'; attrDiv.setAttribute('draggable','true'); attrDiv.setAttribute('data-attr-idx', attrIdx);
-            attrDiv.addEventListener('dragstart', function(e) { e.dataTransfer.setData('attrIdx', attrIdx); e.dataTransfer.setData('dayIdx', dayIdx); attrDiv.classList.add('opacity-50'); });
+            attrDiv.addEventListener('dragstart', function(e) { 
+                e.dataTransfer.setData('attrIdx', attrIdx); 
+                e.dataTransfer.setData('dayIdx', dayIdx);
+                e.dataTransfer.setData('type', 1); // 1 for attraction
+                attrDiv.classList.add('opacity-50');
+                e.stopPropagation(); 
+            });
             attrDiv.addEventListener('dragend', function(e) { attrDiv.classList.remove('opacity-50'); });
-            attrDiv.addEventListener('dragover', function(e) { e.preventDefault(); attrDiv.classList.add('ring-2','ring-blue-400'); });
+            attrDiv.addEventListener('dragover', function(e) { 
+                e.preventDefault(); 
+                attrDiv.classList.add('ring-2','ring-blue-400'); 
+            });
             attrDiv.addEventListener('dragleave', function(e) { attrDiv.classList.remove('ring-2','ring-blue-400'); });
             attrDiv.addEventListener('drop', function(e) { 
-                e.preventDefault(); 
+                console.log('Attraction drop event');
+                e.preventDefault();
                 attrDiv.classList.remove('ring-2','ring-blue-400'); 
                 const fromIdx = parseInt(e.dataTransfer.getData('attrIdx')); 
                 const fromDayIdx = parseInt(e.dataTransfer.getData('dayIdx')); 
-                const toIdx = attrIdx; 
+                const dataType = parseInt(e.dataTransfer.getData('type')); 
+                const toIdx = attrIdx;
+                if (dataType === 0) {
+                    // moving day, not attraction
+                    console.warn('Invalid drag/drop operation: cannot move attraction as a day'); 
+                    return; 
+                }
                 if (fromDayIdx === dayIdx && fromIdx !== toIdx) { 
+                    e.stopPropagation();
+                    //same day, just reorder
+                    console.log(`Reordering attraction from ${fromIdx} to ${toIdx} in day ${dayIdx}`);
                     const moved = placesData[dayIdx].attractions.splice(fromIdx,1)[0]; 
                     placesData[dayIdx].attractions.splice(toIdx,0,moved); 
                     renderEditor(); 
                     refreshMapDebounced(); 
                     saveTripToStorageDebounced(); 
-                } 
+                }
+                else if (fromDayIdx !== dayIdx && dataType === 1) { 
+                    e.stopPropagation();
+                    // moving between days
+                    const moved = placesData[fromDayIdx].attractions.splice(fromIdx,1)[0]; 
+                    if (!placesData[dayIdx].attractions) placesData[dayIdx].attractions = []; 
+                    placesData[dayIdx].attractions.splice(toIdx,0,moved); 
+                    renderEditor(); 
+                    refreshMapDebounced(); 
+                    saveTripToStorageDebounced(); 
+                }
             });
             attrDiv.innerHTML = `
                 <input class="input w-64 px-2 py-1 rounded border" value="${attr.name}" onchange="editAttraction(${dayIdx},${attrIdx},'name',this.value)">
