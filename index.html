@@ -528,7 +528,7 @@
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
                     </div>
                     <div class="space-y-2" id="attractions-${dayIdx}"></div>
-                    <button class="mt-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700" onclick="addAttraction(${dayIdx})"><i class="fa-solid fa-plus ml-1"></i>הוסף מיקום</button>
+                    <button class="mt-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700" onclick="addAttraction(${dayIdx})"><i class="fa-solid fa-plus ml-1"></i>הוסף פעילות</button>
                 `;
             } else {
                 if (placesData[0] && placesData[0].dow) { let firstIdx = hebrewDays.indexOf(placesData[0].dow); dayObj.dow = hebrewDays[(firstIdx + dayIdx) % hebrewDays.length]; } else { dayObj.dow = hebrewDays[dayIdx % hebrewDays.length]; }
@@ -540,7 +540,7 @@
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
                     </div>
                     <div class="space-y-2" id="attractions-${dayIdx}"></div>
-                    <button class="mt-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700" onclick="addAttraction(${dayIdx})"><i class="fa-solid fa-plus ml-1"></i>הוסף מיקום</button>
+                    <button class="mt-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700" onclick="addAttraction(${dayIdx})"><i class="fa-solid fa-plus ml-1"></i>הוסף פעילות</button>
                 `;
             }
             container.appendChild(dayDiv);
@@ -556,7 +556,7 @@
         if (attractions.length > 0) {
             const headerDiv = document.createElement('div'); 
             headerDiv.className = 'flex items-center gap-2 text-sm text-gray-200 text-center w-full'; 
-            headerDiv.innerHTML = `<span class="w-6"></span><span class="w-6">הערות</span><span class="w-6"></span><span class="w-20">שעה</span><span class="w-52">מיקום</span><span class="w-82">קואורדינטות</span><span class="w-36">קישור</span>`; 
+            headerDiv.innerHTML = `<span class="w-6 mr-2"><i class="fa-solid fa-arrows-up-down"></i></span><span class="w-10">הערות</span><span class="w-6"><i class="fa-solid fa-route"></i></span><span class="w-12">שעה</span><span class="w-52">פעילות</span><span class="w-86">קואורדינטות</span><span class="w-32">קישור</span>`; 
             container.appendChild(headerDiv);
         }
         attractions.forEach((attr, attrIdx) => {
@@ -632,7 +632,7 @@
                 <button class="text-blue-400 hover:text-blue-600 location-btn" title="מפה"><i class="fa-solid fa-location-dot"></i></button>
                 <button class="text-sky-300 hover:text-sky-300 waze-btn" title="Waze"><i class="fa-brands fa-waze"></i></button>
                 <button class="text-green-400 hover:text-green-600 url-btn" title="קישור"><i class="fa-solid fa-link"></i></button>
-                <button class="text-red-400 hover:text-red-600" title="מחק מיקום" onclick="deleteAttraction(${dayIdx},${attrIdx})"><i class="fa-solid fa-trash"></i></button>
+                <button class="text-red-400 hover:text-red-600" title="מחק פעילות" onclick="deleteAttraction(${dayIdx},${attrIdx})"><i class="fa-solid fa-trash"></i></button>
             `;
             // Add a separate row for comments (after attrDiv)
             const commentRow = document.createElement('div');
@@ -691,7 +691,7 @@
     window.addDay = function() { const nextDay = placesData && placesData.length ? placesData[placesData.length-1].day+1 : 1; if (!placesData) placesData = []; placesData.push({day: nextDay, dow:'', attractions:[]}); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
     window.deleteDay = function(dayIdx) { showConfirmModal('למחוק את היום הזה?', function(confirmed) { if (confirmed) { placesData.splice(dayIdx,1); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); } }); }
     window.addAttraction = function(dayIdx) { if (!placesData[dayIdx].attractions) placesData[dayIdx].attractions = []; placesData[dayIdx].attractions.push({name:'',coordinates:[0,0],time:'',comments:''}); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
-    window.deleteAttraction = function(dayIdx, attrIdx) { showConfirmModal('למחוק את המיקום הזה?', function(confirmed) { if (confirmed) { placesData[dayIdx].attractions.splice(attrIdx,1); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); } }); }
+    window.deleteAttraction = function(dayIdx, attrIdx) { showConfirmModal('למחוק את הפעילות?', function(confirmed) { if (confirmed) { placesData[dayIdx].attractions.splice(attrIdx,1); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); } }); }
     window.editAttraction = function(dayIdx, attrIdx, field, value) {
         if (field === 'coordinates') {
             // Accept comma or space separated values
