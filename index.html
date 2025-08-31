@@ -99,6 +99,8 @@
     let map = null;
     let baseLayer = null;
     let legendControl = null;
+    // Track which days are selected for display on the map
+    let selectedDays = [];
     let refreshTimer = null;
     let routingEnabled = true; // when false, don't call ORS; useful while editing
     function refreshMapDebounced(delay = 600) {
@@ -302,6 +304,10 @@
 
         // Get day colors
         const dayColors = data.map(dayObj => dayObj.color || 'gray');
+        // Initialize selectedDays if not set or if data length changed
+        if (!Array.isArray(selectedDays) || selectedDays.length !== data.length) {
+            selectedDays = Array(data.length).fill(true);
+        }
 
         // Center map on first attraction if available
         if (data[0] && data[0].attractions && data[0].attractions[0]) {
@@ -312,9 +318,39 @@
         if (legendControl) { try { map.removeControl(legendControl); } catch (e) {} legendControl = null; }
         legendControl = L.control({position: 'topright'});
         legendControl.onAdd = function(map) {
-            const div = document.createElement('div'); let legendHtml = '<span class="text-lg font-bold mb-2 block"></span><div class="flex flex-col gap-2">';
-            data.forEach((dayObj, i) => { const color = dayColors[i % dayColors.length]; legendHtml += `<div class="flex items-center gap-2"><span class="inline-block w-4 h-4 rounded-full border border-white" style="background:${color};"></span> <span class="text-base">יום ${dayObj.day} (${dayObj.dow})</span></div>`; });
-            legendHtml += '</div>'; div.innerHTML = legendHtml; div.className = 'shadow-xl rounded-2xl p-4 bg-gray-800 border border-gray-700 flex flex-col gap-2 text-gray-100'; return div;
+            const div = document.createElement('div');
+            let legendHtml = '<span class="text-lg font-bold mb-2 block">הצג ימים:</span>';
+            legendHtml += '<div class="flex flex-col gap-2">';
+            data.forEach((dayObj, i) => {
+                const color = dayColors[i % dayColors.length];
+                legendHtml += `<label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="legend-day-checkbox" data-day-idx="${i}" ${selectedDays[i] ? 'checked' : ''}><span class="inline-block w-4 h-4 rounded-full border border-white" style="background:${color};"></span> <span class="text-base">יום ${dayObj.day} (${dayObj.dow})</span></label>`;
+            });
+            legendHtml += '</div>';
+            legendHtml += '<div class="flex gap-2 mt-2"><button type="button" class="legend-select-all px-2 py-1 bg-blue-600 text-white rounded">בחר הכל</button><button type="button" class="legend-unselect-all px-2 py-1 bg-gray-600 text-white rounded">נקה הכל</button></div>';
+            div.innerHTML = legendHtml;
+            div.className = 'shadow-xl rounded-2xl p-4 bg-gray-800 border border-gray-700 flex flex-col gap-2 text-gray-100';
+            // Add event listeners for checkboxes and buttons
+            setTimeout(() => {
+                const checkboxes = div.querySelectorAll('.legend-day-checkbox');
+                checkboxes.forEach(cb => {
+                    cb.addEventListener('change', function() {
+                        const idx = Number(cb.getAttribute('data-day-idx'));
+                        selectedDays[idx] = cb.checked;
+                        refreshMapDebounced(0);
+                    });
+                });
+                const selectAllBtn = div.querySelector('.legend-select-all');
+                if (selectAllBtn) selectAllBtn.addEventListener('click', function() {
+                    selectedDays = Array(data.length).fill(true);
+                    refreshMapDebounced(0);
+                });
+                const unselectAllBtn = div.querySelector('.legend-unselect-all');
+                if (unselectAllBtn) unselectAllBtn.addEventListener('click', function() {
+                    selectedDays = Array(data.length).fill(false);
+                    refreshMapDebounced(0);
+                });
+            }, 0);
+            return div;
         };
         legendControl.addTo(map);
 
@@ -365,6 +401,7 @@
 
         // Plot attractions and routes
         data.forEach((dayObj, i) => {
+            if (!selectedDays[i]) return;
             const color = dayColors[i % dayColors.length];
             dayObj.attractions.forEach((attraction, j) => {
                 const [lat, lng] = attraction.coordinates;
@@ -383,6 +420,8 @@
             }
         });
         for (let i = 0; i < data.length - 1; i++) {
+            // Only connect between visible days
+            if (!selectedDays[i] || !selectedDays[i+1]) continue;
             const lastAttr = data[i].attractions[data[i].attractions.length - 1];
             const nextFirstAttr = data[i+1].attractions[0];
             if (lastAttr && nextFirstAttr) addRouteAndDistance(lastAttr.coordinates[0], lastAttr.coordinates[1], nextFirstAttr.coordinates[0], nextFirstAttr.coordinates[1], 'black', 1, '4 4');
