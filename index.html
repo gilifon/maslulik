@@ -616,9 +616,10 @@
                 }
             });
             const isExpanded = !!attr._commentsExpanded;
+            const commentBtnClass = (attr.comments && attr.comments.trim()) ? 'text-green-300' : 'text-gray-400';
             attrDiv.innerHTML = `
                 <button class="text-blue-400 hover:text-blue-600 order-btn" title="שנה סדר" draggable="true"><i class="fa-solid fa-bars"></i></button>
-                <button class="ml-1 text-gray-400 hover:text-gray-200 comment-toggle-btn" title="הערות" style="font-size:1.2em;">${isExpanded ? '<i class="fa-solid fa-chevron-up"></i>' : '<i class="fa-solid fa-comments"></i>'}</button>
+                <button class="ml-1 ${commentBtnClass} hover:text-gray-200 comment-toggle-btn" title="הערות" style="font-size:1.2em;">${isExpanded ? '<i class=\"fa-solid fa-chevron-up\"></i>' : '<i class=\"fa-solid fa-comments\"></i>'}</button>
                 <input class="input w-32 px-2 py-1 rounded border time-input" type="text" data-day="${dayIdx}" data-attr="${attrIdx}" value="${attr.time || ''}" placeholder="hh:mm">
                 <input class="input w-64 px-2 py-1 rounded border" value="${attr.name}" onchange="editAttraction(${dayIdx},${attrIdx},'name',this.value)">
                 <input class="input w-64 px-2 py-1 rounded border coordinates" type="text" value="${attr.coordinates ? attr.coordinates.join(',') : ''}" onchange="editAttraction(${dayIdx},${attrIdx},'coordinates',this.value)">
