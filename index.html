@@ -101,6 +101,20 @@
     let legendControl = null;
     // Track which days are selected for display on the map
     let selectedDays = [];
+    const LS_SELECTED_DAYS_KEY = 'msl_selected_days';
+    // Load selectedDays from localStorage if available
+    function loadSelectedDays(len) {
+        try {
+            const raw = localStorage.getItem(LS_SELECTED_DAYS_KEY);
+            if (!raw) return Array(len).fill(true);
+            const arr = JSON.parse(raw);
+            if (Array.isArray(arr) && arr.length === len) return arr;
+            return Array(len).fill(true);
+        } catch (e) { return Array(len).fill(true); }
+    }
+    function saveSelectedDays() {
+        try { localStorage.setItem(LS_SELECTED_DAYS_KEY, JSON.stringify(selectedDays)); } catch (e) {}
+    }
     let refreshTimer = null;
     let routingEnabled = true; // when false, don't call ORS; useful while editing
     function refreshMapDebounced(delay = 600) {
@@ -306,7 +320,7 @@
         const dayColors = data.map(dayObj => dayObj.color || 'gray');
         // Initialize selectedDays if not set or if data length changed
         if (!Array.isArray(selectedDays) || selectedDays.length !== data.length) {
-            selectedDays = Array(data.length).fill(true);
+            selectedDays = loadSelectedDays(data.length);
         }
 
         // Center map on first attraction if available
@@ -336,17 +350,20 @@
                     cb.addEventListener('change', function() {
                         const idx = Number(cb.getAttribute('data-day-idx'));
                         selectedDays[idx] = cb.checked;
+                        saveSelectedDays();
                         refreshMapDebounced(0);
                     });
                 });
                 const selectAllBtn = div.querySelector('.legend-select-all');
                 if (selectAllBtn) selectAllBtn.addEventListener('click', function() {
                     selectedDays = Array(data.length).fill(true);
+                    saveSelectedDays();
                     refreshMapDebounced(0);
                 });
                 const unselectAllBtn = div.querySelector('.legend-unselect-all');
                 if (unselectAllBtn) unselectAllBtn.addEventListener('click', function() {
                     selectedDays = Array(data.length).fill(false);
+                    saveSelectedDays();
                     refreshMapDebounced(0);
                 });
             }, 0);
