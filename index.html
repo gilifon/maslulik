@@ -178,7 +178,8 @@
                         const url = typeof a.url === 'string' ? a.url : '';
                         const time = typeof a.time === 'string' ? a.time : '';
                         const comments = typeof a.comments === 'string' ? a.comments : '';
-                        dayObj.attractions.push({ name: name, coordinates: [lat, lng], url: url, time: time, comments: comments });
+                        const enabled = (typeof a.enabled === 'boolean') ? a.enabled : true;
+                        dayObj.attractions.push({ name: name, coordinates: [lat, lng], url: url, time: time, comments: comments, enabled: enabled });
                     }
                 }
                 sanitized.push(dayObj);
@@ -421,7 +422,9 @@
         data.forEach((dayObj, i) => {
             if (!selectedDays[i]) return;
             const color = dayColors[i % dayColors.length];
-            dayObj.attractions.forEach((attraction, j) => {
+            // Only enabled attractions
+            const enabledAttractions = dayObj.attractions.filter(attr => attr.enabled !== false);
+            enabledAttractions.forEach((attraction, j) => {
                 const [lat, lng] = attraction.coordinates;
                 const marker = L.circleMarker([lat, lng], { color: (j === 0) ? 'black' : color, fillColor: color, fillOpacity: 0.8, radius: 6, weight: (j === 0) ? 2 : 1 }).addTo(map);
                 // save coordinate for fitBounds
@@ -430,8 +433,8 @@
                 const url = `https://www.google.com/maps?q=${lat},${lng}`;
                 marker.on('click', function() { window.open(url, '_blank'); });
             });
-            if (dayObj.attractions.length > 1) {
-                let latlngs = dayObj.attractions.map(attr => attr.coordinates);
+            if (enabledAttractions.length > 1) {
+                let latlngs = enabledAttractions.map(attr => attr.coordinates);
                 for (let k = 0; k < latlngs.length - 1; k++) {
                     addRouteAndDistance(latlngs[k][0], latlngs[k][1], latlngs[k+1][0], latlngs[k+1][1], color, 3);
                 }
@@ -553,7 +556,7 @@
         if (attractions.length > 0) {
             const headerDiv = document.createElement('div'); 
             headerDiv.className = 'flex items-center gap-2 text-sm text-gray-200 text-center w-full'; 
-            headerDiv.innerHTML = `<span class="w-56">מיקום</span><span class="w-36">שעה</span><span class="w-64">קואורדינטות</span><span class="w-64">קישור</span>`; 
+            headerDiv.innerHTML = `<span class="w-6"></span><span class="w-6">הערות</span><span class="w-6"></span><span class="w-20">שעה</span><span class="w-52">מיקום</span><span class="w-82">קואורדינטות</span><span class="w-36">קישור</span>`; 
             container.appendChild(headerDiv);
         }
         attractions.forEach((attr, attrIdx) => {
@@ -617,9 +620,11 @@
             });
             const isExpanded = !!attr._commentsExpanded;
             const commentBtnClass = (attr.comments && attr.comments.trim()) ? 'text-green-300' : 'text-gray-400';
+            const enabled = attr.enabled !== false; // default true
             attrDiv.innerHTML = `
-                <button class="text-blue-400 hover:text-blue-600 order-btn" title="שנה סדר" draggable="true"><i class="fa-solid fa-bars"></i></button>
-                <button class="ml-1 ${commentBtnClass} hover:text-gray-200 comment-toggle-btn" title="הערות" style="font-size:1.2em;">${isExpanded ? '<i class=\"fa-solid fa-chevron-up\"></i>' : '<i class=\"fa-solid fa-comments\"></i>'}</button>
+                <button class="px-1 py-1 text-blue-400 hover:text-blue-600 order-btn" title="שנה סדר" draggable="true"><i class="fa-solid fa-bars"></i></button>
+                <button class="px-1 py-1 ml-1 ${commentBtnClass} hover:text-gray-200 comment-toggle-btn" title="הערות" style="font-size:1.2em;">${isExpanded ? '<i class=\"fa-solid fa-chevron-up\"></i>' : '<i class=\"fa-solid fa-comments\"></i>'}</button>
+                <button class="ml-1 toggle-attraction-btn ${enabled ? 'text-green-500' : 'text-gray-300'} rounded px-1 py-1" title="${enabled ? 'מוצג במפה' : 'מוסתר מהמפה'}">${enabled ? '<i class=\"fa-solid fa-toggle-on\"></i>' : '<i class=\"fa-solid fa-toggle-off\"></i>'}</button>
                 <input class="input w-32 px-2 py-1 rounded border time-input" type="text" data-day="${dayIdx}" data-attr="${attrIdx}" value="${attr.time || ''}" placeholder="hh:mm">
                 <input class="input w-64 px-2 py-1 rounded border" value="${attr.name}" onchange="editAttraction(${dayIdx},${attrIdx},'name',this.value)">
                 <input class="input w-64 px-2 py-1 rounded border coordinates" type="text" value="${attr.coordinates ? attr.coordinates.join(',') : ''}" onchange="editAttraction(${dayIdx},${attrIdx},'coordinates',this.value)">
@@ -648,6 +653,17 @@
                     textarea.onchange = function() {
                         placesData[dayIdx].attractions[attrIdx].comments = textarea.value;
                         saveTripToStorageDebounced();
+                    };
+                }
+                // Toggle attraction enabled/disabled
+                const enableBtn = attrDiv.querySelector('.toggle-attraction-btn');
+                if (enableBtn) {
+                    enableBtn.onclick = function() {
+                        const curr = placesData[dayIdx].attractions[attrIdx].enabled;
+                        placesData[dayIdx].attractions[attrIdx].enabled = !(curr !== false); // toggle
+                        saveTripToStorageDebounced();
+                        renderEditor();
+                        refreshMapDebounced();
                     };
                 }
             }, 0);
