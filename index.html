@@ -177,7 +177,8 @@
                         if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
                         const url = typeof a.url === 'string' ? a.url : '';
                         const time = typeof a.time === 'string' ? a.time : '';
-                        dayObj.attractions.push({ name: name, coordinates: [lat, lng], url: url, time: time });
+                        const comments = typeof a.comments === 'string' ? a.comments : '';
+                        dayObj.attractions.push({ name: name, coordinates: [lat, lng], url: url, time: time, comments: comments });
                     }
                 }
                 sanitized.push(dayObj);
@@ -614,8 +615,10 @@
                     saveTripToStorageDebounced(); 
                 }
             });
+            const isExpanded = !!attr._commentsExpanded;
             attrDiv.innerHTML = `
                 <button class="text-blue-400 hover:text-blue-600 order-btn" title="שנה סדר" draggable="true"><i class="fa-solid fa-bars"></i></button>
+                <button class="ml-1 text-gray-400 hover:text-gray-200 comment-toggle-btn" title="הערות" style="font-size:1.2em;">${isExpanded ? '<i class="fa-solid fa-chevron-up"></i>' : '<i class="fa-solid fa-comments"></i>'}</button>
                 <input class="input w-32 px-2 py-1 rounded border time-input" type="text" data-day="${dayIdx}" data-attr="${attrIdx}" value="${attr.time || ''}" placeholder="hh:mm">
                 <input class="input w-64 px-2 py-1 rounded border" value="${attr.name}" onchange="editAttraction(${dayIdx},${attrIdx},'name',this.value)">
                 <input class="input w-64 px-2 py-1 rounded border coordinates" type="text" value="${attr.coordinates ? attr.coordinates.join(',') : ''}" onchange="editAttraction(${dayIdx},${attrIdx},'coordinates',this.value)">
@@ -625,6 +628,28 @@
                 <button class="text-green-400 hover:text-green-600 url-btn" title="קישור"><i class="fa-solid fa-link"></i></button>
                 <button class="text-red-400 hover:text-red-600" title="מחק מיקום" onclick="deleteAttraction(${dayIdx},${attrIdx})"><i class="fa-solid fa-trash"></i></button>
             `;
+            // Add a separate row for comments (after attrDiv)
+            const commentRow = document.createElement('div');
+            commentRow.className = 'flex items-center gap-2 bg-gray-800 text-gray-300 rounded px-2 py-1 mb-1 w-full';
+            commentRow.style.display = isExpanded ? 'block' : 'none';
+            commentRow.innerHTML = `<textarea class="input w-full px-2 py-1 rounded border mt-2" rows="2" placeholder="הערות...">${attr.comments ? attr.comments : ''}</textarea>`;
+            // Toggle and save logic
+            setTimeout(() => {
+                const toggleBtn = attrDiv.querySelector('.comment-toggle-btn');
+                if (toggleBtn) {
+                    toggleBtn.onclick = function() {
+                        attr._commentsExpanded = !attr._commentsExpanded;
+                        renderEditor();
+                    };
+                }
+                const textarea = commentRow.querySelector('textarea');
+                if (textarea) {
+                    textarea.onchange = function() {
+                        placesData[dayIdx].attractions[attrIdx].comments = textarea.value;
+                        saveTripToStorageDebounced();
+                    };
+                }
+            }, 0);
             // wire buttons
             setTimeout(() => { // ensure DOM present
                 const locationBtn = attrDiv.querySelector('.location-btn'); if (locationBtn) locationBtn.onclick = function() { if(attr.coordinates) onLocationClick(attr.coordinates[0], attr.coordinates[1]); };
@@ -632,6 +657,7 @@
                 const urlBtn = attrDiv.querySelector('.url-btn'); if (urlBtn) urlBtn.onclick = function() { onUrlClick(attr.url); };
             }, 0);
             container.appendChild(attrDiv);
+            container.appendChild(commentRow);
         });
     // initialize custom time pickers after DOM insertion
     try { initTimePickers(); } catch (e) {}
@@ -647,7 +673,7 @@
     function onUrlClick(url) { if (url && typeof url === 'string' && url.trim()) window.open(url, '_blank'); }
     window.addDay = function() { const nextDay = placesData && placesData.length ? placesData[placesData.length-1].day+1 : 1; if (!placesData) placesData = []; placesData.push({day: nextDay, dow:'', attractions:[]}); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
     window.deleteDay = function(dayIdx) { showConfirmModal('למחוק את היום הזה?', function(confirmed) { if (confirmed) { placesData.splice(dayIdx,1); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); } }); }
-    window.addAttraction = function(dayIdx) { if (!placesData[dayIdx].attractions) placesData[dayIdx].attractions = []; placesData[dayIdx].attractions.push({name:'',coordinates:[0,0],time:''}); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
+    window.addAttraction = function(dayIdx) { if (!placesData[dayIdx].attractions) placesData[dayIdx].attractions = []; placesData[dayIdx].attractions.push({name:'',coordinates:[0,0],time:'',comments:''}); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
     window.deleteAttraction = function(dayIdx, attrIdx) { showConfirmModal('למחוק את המיקום הזה?', function(confirmed) { if (confirmed) { placesData[dayIdx].attractions.splice(attrIdx,1); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); } }); }
     window.editAttraction = function(dayIdx, attrIdx, field, value) {
         if (field === 'coordinates') {
@@ -734,7 +760,8 @@
                     const wz = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
                     const urlHtml = a.url ? `<a href="${a.url}" target="_blank" rel="noopener">${svgExt}</a>` : '';
                     const timeHtml = a.time ? `<span>(${a.time})</span>` : '';
-                    bodyHtml += `<div class="attr"><div class="attr-header"><span class="dot" style="background:${dayColor}"></span><strong>${a.name || ''}</strong>${timeHtml}</div><div class="links"><a href="${gm}" target="_blank" rel="noopener">${svgGm}</a><a href="${wz}" target="_blank" rel="noopener">${svgWz}</a>${urlHtml}</div></div>`;
+                    const commentsHtml = a.comments ? `<div class="attr-comments" style="background:#22223b;color:#f1f1f1;padding:6px 10px;border-radius:6px;margin-top:4px;white-space:pre-line;font-size:15px;">${a.comments.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>` : '';
+                    bodyHtml += `<div class="attr"><div class="attr-header"><span class="dot" style="background:${dayColor}"></span><strong>${a.name || ''}</strong>${timeHtml}</div><div class="links"><a href="${gm}" target="_blank" rel="noopener">${svgGm}</a><a href="${wz}" target="_blank" rel="noopener">${svgWz}</a>${urlHtml}</div>${commentsHtml}</div>`;
                 });
             } else {
                 bodyHtml += `<div class="attr">אין אטרקציות</div>`;
