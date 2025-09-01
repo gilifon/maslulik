@@ -9,7 +9,7 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
         <style>
-        #map { height: 80vh; width: 100%; border-radius: 0.6rem; box-shadow: 0 2px 12px rgba(0,0,0,0.12); }
+        #map { height: 80vh; width: 100%; border-radius: 0.6rem; box-shadow: 0 2px 12px rgba(0,0,0,0.12); z-index: 10;}
         .leaflet-control { font-size: 1rem; }
         .animated-fade {
             animation: fadeInOut 5s alternate; /* Applies the animation */
@@ -34,6 +34,9 @@
                     </h1>
                 </div>
                 <div class="flex items-center gap-2 mt-2 md:mt-0">
+                    <button id="savedTripsBtn" class="px-3 py-1 bg-orange-700 text-white rounded hover:bg-orange-600">
+                        <i class="fa-solid fa-book-open ml-2"></i>טיולים שמורים
+                    </button>
                     <button id="tabMap" class="px-3 py-1 bg-blue-700 text-white rounded hover:bg-blue-600">
                         <i class="fa-solid fa-globe ml-2"></i>מפה
                     </button>
@@ -48,6 +51,21 @@
                 <div id="toast" class="fixed top-4 mr-50 z-50 hidden animated-fade">
                     <!-- RTL: put toast left -->
                     <div id="toastMsg" class="px-4 py-2 rounded shadow-lg font-bold flex items-center gap-2"></div>
+                </div>
+                <!-- Saved Trips Modal -->
+                <div id="savedTripsModal" class="fixed inset-0 z-150 flex items-center justify-center bg-black/50 hidden">
+                    <div class="bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-xl text-right">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold">טיולים שמורים</h3>
+                            <div class="flex items-center gap-2">
+                                <button id="saveToLibraryBtn" class="px-3 py-1 bg-green-600 text-white rounded">שמור את המסלול הנוכחי</button>
+                                <button id="closeSavedTripsBtn" class="px-3 py-1 bg-gray-600 text-white rounded">סגור</button>
+                            </div>
+                        </div>
+                        <div id="savedTripsList" class="flex flex-col gap-2 max-h-80 overflow-auto">
+                            <!-- populated dynamically -->
+                        </div>
+                    </div>
                 </div>
                 <!-- Map container -->
                 <section id="mapContainer">
@@ -76,9 +94,6 @@
                         <button id="fileLoaderBtn" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center">
                             <i class="fa-solid fa-folder-open ml-2"></i>טען מסלוליק
                         </button>
-                        <button id="savedTripsBtn" class="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 flex items-center">
-                            <i class="fa-solid fa-book-open ml-2"></i>טיולים שמורים
-                        </button>
                         <!-- Trip metadata (name & description) -->
                         <div class="flex bg-gray-800 text-gray-300 rounded px-2 py-1 mr-2">
                             <input id="tripNameInput" type="text" placeholder="שם המסלול" class="input w-48 px-2 py-1 rounded border">
@@ -100,21 +115,6 @@
                         <button id="exportBtn" class="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center" title="ייצא HTML סטטי">
                             <i class="fa-solid fa-file-arrow-down ml-2"></i>ייצא
                         </button>
-                    </div>
-                    <!-- Saved Trips Modal -->
-                    <div id="savedTripsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 hidden">
-                        <div class="bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-xl text-right">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-bold">טיולים שמורים</h3>
-                                <div class="flex items-center gap-2">
-                                    <button id="saveToLibraryBtn" class="px-3 py-1 bg-green-600 text-white rounded">שמור את המסלול הנוכחי</button>
-                                    <button id="closeSavedTripsBtn" class="px-3 py-1 bg-gray-600 text-white rounded">סגור</button>
-                                </div>
-                            </div>
-                            <div id="savedTripsList" class="flex flex-col gap-2 max-h-80 overflow-auto">
-                                <!-- populated dynamically -->
-                            </div>
-                        </div>
                     </div>
                     <!-- Confirmation Modal -->
                     <div id="confirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 hidden">
