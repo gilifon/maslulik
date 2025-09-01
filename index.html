@@ -839,6 +839,9 @@
             const lat = e.latlng.lat.toFixed(4);
             const lng = e.latlng.lng.toFixed(4);
             const text = `${lat},${lng}`;
+            // Add a small circle marker for 5 seconds
+            const tempMarker = L.circleMarker(e.latlng, {radius: 4, color: '#000000', fillColor: '#666666', fillOpacity: 0.5, weight: 1}).addTo(map);
+            setTimeout(() => { map.removeLayer(tempMarker); }, 5000);
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(text).then(() => {
                     if (typeof showToast === 'function') {showToast('קואורדינטות: ' + text);}
