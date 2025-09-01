@@ -35,7 +35,7 @@
                 </div>
                 <div class="flex items-center gap-2 mt-2 md:mt-0">
                     <button id="savedTripsBtn" class="px-3 py-1 bg-orange-700 text-white rounded hover:bg-orange-600">
-                        <i class="fa-solid fa-book-open ml-2"></i>מסלולים שמורים
+                    <i class="fa-solid fa-list ml-2"></i>המסלולים שלי
                     </button>
                     <button id="tabMap" class="px-3 py-1 bg-blue-700 text-white rounded hover:bg-blue-600">
                         <i class="fa-solid fa-globe ml-2"></i>מפה
@@ -56,9 +56,9 @@
                 <div id="savedTripsModal" class="fixed inset-0 z-20 flex items-center justify-center bg-black/50 hidden">
                     <div class="bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-xl text-right">
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-bold">מסלולים שמורים</h3>
+                            <h3 class="text-lg font-bold"><i class="fa-solid fa-map-location-dot ml-2"></i>המסלולים שלי</h3>
                             <div class="flex items-center gap-2">
-                                <button id="saveToLibraryBtn" class="px-3 py-1 bg-green-600 text-white rounded">שמור את המסלול הנוכחי</button>
+                                <button id="saveToLibraryBtn" class="px-3 py-1 bg-green-600 text-white rounded"><i class="fa-solid fa-save ml-2"></i>שמור את המסלול הנוכחי</button>
                                 <button id="closeSavedTripsBtn" class="px-3 py-1 bg-gray-600 text-white rounded">סגור</button>
                             </div>
                         </div>
@@ -102,7 +102,7 @@
                     <!-- Editor top bar (file loader lives here) -->
                     <div class="flex items-center gap-4 bg-gray-600 text-gray-200 rounded-lg p-2 mt-16">
                         <button id="fileLoaderBtn" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center">
-                            <i class="fa-solid fa-folder-open ml-2"></i>טען מסלוליק
+                            <i class="fa-solid fa-folder-open ml-2"></i>יבוא מסלול
                         </button>
                         <!-- Trip metadata (name & description) -->
                         <div class="flex rounded">
@@ -1075,18 +1075,20 @@
             const keys = Object.keys(store).sort((a,b) => a.localeCompare(b));
             if (!keys.length) { savedTripsList.innerHTML = '<div class="text-gray-300">אין מסלולים שמורים</div>'; return; }
             keys.forEach(name => {
-                const item = document.createElement('div'); item.className = 'flex items-center justify-between p-2 bg-gray-700 rounded';
+                const item = document.createElement('div'); 
+                item.className = 'flex items-center justify-between p-2 bg-gray-700 rounded';
                 item.innerHTML = `
                     <div class="flex flex-col text-right">
-                        <strong>${name} (${(store[name] && store[name].days ? store[name].days.length : 0)} ימים)</strong>
+                        <strong><i class="fa-solid fa-ellipsis-vertical ml-2"></i>${name} (${(store[name] && store[name].days ? store[name].days.length : 0)} ימים)</strong>
                         <small class="text-gray-400">${(store[name] && store[name].description ? store[name].description : "")}</small>
                         
                     </div>
                     <div class="flex gap-2">
-                        <button class="load-trip-btn px-2 py-1 bg-blue-600 text-white rounded">טען</button>
-                        <button class="delete-trip-btn px-2 py-1 bg-red-600 text-white rounded">מחק</button>
+                        <button class="load-trip-btn px-2 py-1 bg-blue-600 text-white rounded"><i class="fa-solid fa-upload ml-2"></i>טען</button>
+                        <button class="delete-trip-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded"><i class="fa-solid fa-trash-can"></i></button>
                     </div>`;
-                const loadBtn = item.querySelector('.load-trip-btn'); const delBtn = item.querySelector('.delete-trip-btn');
+                const loadBtn = item.querySelector('.load-trip-btn'); 
+                const delBtn = item.querySelector('.delete-trip-btn');
                 loadBtn.onclick = function(){ 
                     trip = store[name]; 
                     populateTripInputs(trip);
