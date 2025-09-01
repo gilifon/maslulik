@@ -76,6 +76,9 @@
                         <button id="fileLoaderBtn" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center">
                             <i class="fa-solid fa-folder-open ml-2"></i>טען מסלוליק
                         </button>
+                        <button id="savedTripsBtn" class="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 flex items-center">
+                            <i class="fa-solid fa-book-open ml-2"></i>טיולים שמורים
+                        </button>
                         <!-- Trip metadata (name & description) -->
                         <div class="flex bg-gray-800 text-gray-300 rounded px-2 py-1 mr-2">
                             <input id="tripNameInput" type="text" placeholder="שם המסלול" class="input w-48 px-2 py-1 rounded border">
@@ -97,6 +100,21 @@
                         <button id="exportBtn" class="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center" title="ייצא HTML סטטי">
                             <i class="fa-solid fa-file-arrow-down ml-2"></i>ייצא
                         </button>
+                    </div>
+                    <!-- Saved Trips Modal -->
+                    <div id="savedTripsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 hidden">
+                        <div class="bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-xl text-right">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-bold">טיולים שמורים</h3>
+                                <div class="flex items-center gap-2">
+                                    <button id="saveToLibraryBtn" class="px-3 py-1 bg-green-600 text-white rounded">שמור את המסלול הנוכחי</button>
+                                    <button id="closeSavedTripsBtn" class="px-3 py-1 bg-gray-600 text-white rounded">סגור</button>
+                                </div>
+                            </div>
+                            <div id="savedTripsList" class="flex flex-col gap-2 max-h-80 overflow-auto">
+                                <!-- populated dynamically -->
+                            </div>
+                        </div>
                     </div>
                     <!-- Confirmation Modal -->
                     <div id="confirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 hidden">
@@ -917,6 +935,8 @@
         if (storedTrip) {
             // loader returns normalized trip object
             trip = storedTrip;
+            // ensure UI shows trip metadata (name / description)
+            try { populateTripInputs(trip); } catch (e) {}
             renderEditor();
             // do not auto-enable routing here; showMap will enable and refresh
             // but populate map overlays (preview)
@@ -947,13 +967,8 @@
                         return;
                     }
                     // persist trip to storage and render
-                    // update visible metadata inputs if they exist
-                    try {
-                        const tName = document.getElementById('tripNameInput');
-                        const tDesc = document.getElementById('tripDescInput');
-                        if (tName) tName.value = trip.name || '';
-                        if (tDesc) tDesc.value = trip.description || '';
-                    } catch (e) {}
+                    // update visible metadata inputs
+                    populateTripInputs(trip);
                     saveTripToStorageDebounced(0);
                     renderEditor();
                     // clear map overlays and load
@@ -965,20 +980,75 @@
             reader.readAsText(file);
         });
 
-            // Trip metadata inputs wiring
-            const tripNameInput = document.getElementById('tripNameInput');
-            const tripDescInput = document.getElementById('tripDescInput');
-            // initialize from trip object
-            (function initTripInputs(){
-                const t = ensureTrip();
-                if (tripNameInput) tripNameInput.value = t.name || '';
-                if (tripDescInput) tripDescInput.value = t.description || '';
-            })();
+        // Saved trips library wiring
+        const savedTripsBtn = document.getElementById('savedTripsBtn');
+        const savedTripsModal = document.getElementById('savedTripsModal');
+        const savedTripsList = document.getElementById('savedTripsList');
+        const closeSavedTripsBtn = document.getElementById('closeSavedTripsBtn');
+        const saveToLibraryBtn = document.getElementById('saveToLibraryBtn');
+        const SAVED_TRIPS_KEY = 'msl_saved_trips';
+
+        function loadSavedTripsFromStorage() {
+            try { const raw = localStorage.getItem(SAVED_TRIPS_KEY); return raw ? JSON.parse(raw) : {}; } catch (e) { return {}; }
+        }
+        function persistSavedTrips(obj) { try { localStorage.setItem(SAVED_TRIPS_KEY, JSON.stringify(obj)); } catch (e) {} }
+
+        function renderSavedTripsList() {
+            const store = loadSavedTripsFromStorage();
+            savedTripsList.innerHTML = '';
+            const keys = Object.keys(store).sort((a,b) => a.localeCompare(b));
+            if (!keys.length) { savedTripsList.innerHTML = '<div class="text-gray-300">אין טיולים שמורים</div>'; return; }
+            keys.forEach(name => {
+                const item = document.createElement('div'); item.className = 'flex items-center justify-between p-2 bg-gray-700 rounded';
+                item.innerHTML = `<div class="flex flex-col text-left"><strong>${name}</strong><small class="text-gray-400">${(store[name] && store[name].days ? store[name].days.length : 0)} ימים</small></div><div class="flex gap-2"><button class="load-trip-btn px-2 py-1 bg-blue-600 text-white rounded">טען</button><button class="delete-trip-btn px-2 py-1 bg-red-600 text-white rounded">מחק</button></div>`;
+                const loadBtn = item.querySelector('.load-trip-btn'); const delBtn = item.querySelector('.delete-trip-btn');
+                loadBtn.onclick = function(){ 
+                    trip = store[name]; 
+                    populateTripInputs(trip);
+                    renderEditor(); 
+                    loadPlaces(getDays()); 
+                    saveTripToStorageDebounced(0); 
+                    savedTripsModal.classList.add('hidden'); 
+                    showToast('הטיול נטען'); };
+                delBtn.onclick = function(){
+                    showConfirmModal('למחוק את הטיול הזה?', function(confirmed){ if (!confirmed) return; delete store[name]; persistSavedTrips(store); renderSavedTripsList(); showToast('הטיול נמחק'); });
+                };
+                savedTripsList.appendChild(item);
+            });
+        }
+
+        if (savedTripsBtn) savedTripsBtn.addEventListener('click', function(){ renderSavedTripsList(); savedTripsModal.classList.remove('hidden'); });
+        if (closeSavedTripsBtn) closeSavedTripsBtn.addEventListener('click', function(){ savedTripsModal.classList.add('hidden'); });
+        if (saveToLibraryBtn) saveToLibraryBtn.addEventListener('click', function(){
+            const t = ensureTrip(); const name = (t.name || '').trim();
+            if (!name) { showToast('הזן שם כשתשמור', true); return; }
+            const store = loadSavedTripsFromStorage();
+            store[name] = JSON.parse(JSON.stringify(t)); // clone
+            persistSavedTrips(store);
+            renderSavedTripsList();
+            showToast('הטיול נשמר');
+        });
+
+            // Trip metadata inputs wiring (centralized)
+            function populateTripInputs(tr) {
+                try {
+                    const tName = document.getElementById('tripNameInput');
+                    const tDesc = document.getElementById('tripDescInput');
+                    if (tName) tName.value = (tr && tr.name) ? tr.name : '';
+                    if (tDesc) tDesc.value = (tr && tr.description) ? tr.description : '';
+                } catch (e) {}
+            }
             // simple debounce utility
             function debounce(fn, wait) { let t=null; return function(...args){ if (t) clearTimeout(t); t=setTimeout(()=>{ t=null; fn.apply(this,args); }, wait); }; }
             const saveMetaDebounced = debounce(function(){ saveTripToStorageDebounced(0); refreshMapDebounced(200); }, 300);
-            if (tripNameInput) tripNameInput.addEventListener('input', function(e){ ensureTrip(); trip.name = e.target.value || ''; saveMetaDebounced(); });
-            if (tripDescInput) tripDescInput.addEventListener('input', function(e){ ensureTrip(); trip.description = e.target.value || ''; saveMetaDebounced(); });
+            (function attachMetaListeners(){
+                try {
+                    const tName = document.getElementById('tripNameInput');
+                    const tDesc = document.getElementById('tripDescInput');
+                    if (tName) tName.addEventListener('input', function(e){ ensureTrip(); trip.name = e.target.value || ''; saveMetaDebounced(); });
+                    if (tDesc) tDesc.addEventListener('input', function(e){ ensureTrip(); trip.description = e.target.value || ''; saveMetaDebounced(); });
+                } catch (e) {}
+            })();
 
         // Clear All button handler
         const clearAllBtn = document.getElementById('clearAllBtn');
@@ -988,8 +1058,8 @@
                     if (!confirmed) return;
                     // clear in-memory trip
                     trip = { name: '', description: '', days: [] };
-                    // also clear visible meta inputs (if present)
-                    try { const tName = document.getElementById('tripNameInput'); const tDesc = document.getElementById('tripDescInput'); if (tName) tName.value = ''; if (tDesc) tDesc.value = ''; } catch (e) {}
+                    // update UI inputs
+                    populateTripInputs(trip);
                     // persist cleared trip immediately
                     saveTripToStorageDebounced(0);
                     // update editor
