@@ -1,96 +1,115 @@
 <!DOCTYPE html>
 <html lang="en" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>מסלוליק</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-
-    <style>
+    <head>
+        <meta charset="UTF-8">
+        <title>מסלוליק</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <style>
         #map { height: 80vh; width: 100%; border-radius: 0.6rem; box-shadow: 0 2px 12px rgba(0,0,0,0.12); }
         .leaflet-control { font-size: 1rem; }
-    </style>
-</head>
-<body>
-    <div class="min-h-screen bg-gray-900 text-gray-300 p-6">
-        <!-- Header with tabs -->
-        <header class="w-full bg-gray-800 shadow p-4 flex flex-col md:flex-row items-center justify-between fixed top-0 left-0 z-10">
-            <div class="flex items-center gap-2">
-                <h1 class="text-3xl font-bold drop-shadow-lg flex items-center gap-3">
-                    <i class="fa-solid fa-map-location-dot text-blue-400"></i>
-                    <span>מסלוליק</span>
-                </h1>
-            </div>
-            <div class="flex items-center gap-2 mt-2 md:mt-0">
-                <button id="tabMap" class="px-3 py-1 bg-blue-700 text-white rounded hover:bg-blue-600"><i class="fa-solid fa-globe ml-2"></i>מפה</button>
-                <button id="tabEditor" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"><i class="fa-solid fa-pencil ml-2"></i>עורך</button>
-            </div>
-        </header>
-
-        <!-- Main content: Map tab and Editor tab (hidden/shown by tabs) -->
-        <main class="">
-            <!-- Toast Notification -->
-            <div id="toast" class="fixed top-4 mr-50 z-50 hidden"> <!-- RTL: put toast left -->
-                <div id="toastMsg" class="px-4 py-2 rounded shadow-lg font-bold flex items-center gap-2"></div>
-            </div>
-            <!-- Map container -->
-            <section id="mapContainer">
-                <div id="headerControls" class="flex items-center gap-4 bg-gray-600 text-gray-200 rounded-lg p-2 mb-2 mt-16">
-                    <!-- Map toggle (stays in header but only affects map) -->
-                    <div class="flex items-center gap-2">
-                        <span class="font-medium text-base text-gray-300">מרחקים</span>
-                        <button id="toggleDistances" type="button" aria-pressed="true" aria-label="Toggle distances" class="relative w-12 h-6 rounded-full bg-blue-500 transition focus:outline-none">
-                            <span id="toggleKnob" class="absolute left-1 top-1 w-4 h-4 rounded-full bg-white shadow transition-transform translate-x-0"></span>
+        </style>
+    </head>
+    <body>
+        <div class="min-h-screen bg-gray-900 text-gray-300 p-6">
+            <!-- Header with tabs -->
+            <header class="w-full bg-gray-800 shadow p-4 flex flex-col md:flex-row items-center justify-between fixed top-0 left-0 z-10">
+                <div class="flex items-center gap-2">
+                    <h1 class="text-3xl font-bold drop-shadow-lg flex items-center gap-3">
+                        <i class="fa-solid fa-map-location-dot text-blue-400"></i>
+                        <span>מסלוליק</span>
+                    </h1>
+                </div>
+                <div class="flex items-center gap-2 mt-2 md:mt-0">
+                    <button id="tabMap" class="px-3 py-1 bg-blue-700 text-white rounded hover:bg-blue-600">
+                        <i class="fa-solid fa-globe ml-2"></i>מפה
+                    </button>
+                    <button id="tabEditor" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">
+                        <i class="fa-solid fa-pencil ml-2"></i>עורך
+                    </button>
+                </div>
+            </header>
+            <!-- Main content: Map tab and Editor tab (hidden/shown by tabs) -->
+            <main class="">
+                <!-- Toast Notification -->
+                <div id="toast" class="fixed top-4 mr-50 z-50 hidden">
+                    <!-- RTL: put toast left -->
+                    <div id="toastMsg" class="px-4 py-2 rounded shadow-lg font-bold flex items-center gap-2"></div>
+                </div>
+                <!-- Map container -->
+                <section id="mapContainer">
+                    <div id="headerControls" class="flex items-center gap-4 bg-gray-600 text-gray-200 rounded-lg p-2 mb-2 mt-16">
+                        <!-- Map toggle (stays in header but only affects map) -->
+                        <div class="flex items-center gap-2">
+                            <span class="font-medium text-base text-gray-300">מרחקים</span>
+                            <button
+                                id="toggleDistances"
+                                type="button"
+                                aria-pressed="true"
+                                aria-label="Toggle distances"
+                                class="relative w-12 h-6 rounded-full bg-blue-500 transition focus:outline-none"
+                            >
+                                <span id="toggleKnob" class="absolute left-1 top-1 w-4 h-4 rounded-full bg-white shadow transition-transform translate-x-0"></span>
+                            </button>
+                        </div>
+                        <!-- placeholder for spacing - file loader moved to editor tab -->
+                    </div>
+                    <div id="map" style="height:82vh; width:100%; border-radius:0.6rem; box-shadow:0 2px 12px rgba(0,0,0,0.12);"></div>
+                </section>
+                <!-- Editor container (hidden by default) -->
+                <section id="editorContainer" class="hidden">
+                    <!-- Editor top bar (file loader lives here) -->
+                    <div class="flex items-center gap-4 bg-gray-600 text-gray-200 rounded-lg p-2 mt-16">
+                        <button id="fileLoaderBtn" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center">
+                            <i class="fa-solid fa-folder-open ml-2"></i>טען מסלוליק
+                        </button>
+                        <input
+                            type="file"
+                            id="fileLoader"
+                            accept="application/json"
+                            class="hidden"
+                        >
+                        <div class="flex-1"></div>
+                        <button id="clearAllBtn" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 flex items-center" aria-label="נקה את כל המסלול">
+                            <i class="fa-solid fa-trash-can ml-2"></i>נקה הכל
+                        </button>
+                        <button id="saveBtn" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center">
+                            <i class="fa-solid fa-save ml-2"></i>שמור
+                        </button>
+                        <button id="exportBtn" class="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center" title="ייצא HTML סטטי">
+                            <i class="fa-solid fa-file-arrow-down ml-2"></i>ייצא
                         </button>
                     </div>
-                    <!-- placeholder for spacing - file loader moved to editor tab -->
-                </div>
-                <div id="map" style="height:82vh; width:100%; border-radius:0.6rem; box-shadow:0 2px 12px rgba(0,0,0,0.12);"></div>
-            </section>
-
-            <!-- Editor container (hidden by default) -->
-            <section id="editorContainer" class="hidden">
-                <!-- Editor top bar (file loader lives here) -->
-                <div class="flex items-center gap-4 bg-gray-600 text-gray-200 rounded-lg p-2 mt-16">
-                    <button id="fileLoaderBtn" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center"><i class="fa-solid fa-folder-open ml-2"></i>טען מסלוליק</button>
-                    <input type="file" id="fileLoader" accept="application/json" class="hidden" />
-                    <div class="flex-1"></div>
-                    <button id="clearAllBtn" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 flex items-center" aria-label="נקה את כל המסלול"><i class="fa-solid fa-trash-can ml-2"></i>נקה הכל</button>
-                    <button id="saveBtn" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center"><i class="fa-solid fa-save ml-2"></i>שמור</button>
-                    <button id="exportBtn" class="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center" title="ייצא HTML סטטי"><i class="fa-solid fa-file-arrow-down ml-2"></i>ייצא</button>
-                </div>
-
-                <!-- Confirmation Modal -->
-                <div id="confirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 hidden">
-                    <div class="bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-sm text-center">
-                        <div id="confirmModalMsg" class="text-lg text-gray-100 mb-6"></div>
-                        <div class="flex justify-center gap-4">
-                            <button id="confirmYes" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">אישור</button>
-                            <button id="confirmNo" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">ביטול</button>
+                    <!-- Confirmation Modal -->
+                    <div id="confirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 hidden">
+                        <div class="bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-sm text-center">
+                            <div id="confirmModalMsg" class="text-lg text-gray-100 mb-6"></div>
+                            <div class="flex justify-center gap-4">
+                                <button id="confirmYes" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">אישור</button>
+                                <button id="confirmNo" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">ביטול</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Editor area -->
-                <main class="max-w-7xl mx-auto w-full pt-2 pb-24 px-2"> <!-- extra bottom padding so fixed footer doesn't cover content -->
-                    <div id="editor" class="space-y-6"></div>
-                    
-                </main>
-
-                <!-- Editor footer (fixed to viewport bottom) -->
-                <footer id="editorFooter" class="w-full bg-gray-800 shadow p-4 flex items-center justify-center fixed bottom-0 left-0 z-10">
-                    <button id="addDayFooterBtn" class="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 flex items-center gap-2"><i class="fa-solid fa-plus"></i> הוסף יום</button>
-                </footer>
-            </section>
-        </main>
-    </div>
-
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script>
+                    <!-- Editor area -->
+                    <main class="max-w-7xl mx-auto w-full pt-2 pb-24 px-2">
+                        <!-- extra bottom padding so fixed footer doesn't cover content -->
+                        <div id="editor" class="space-y-6"></div>
+                    </main>
+                    <!-- Editor footer (fixed to viewport bottom) -->
+                    <footer id="editorFooter" class="w-full bg-gray-800 shadow p-4 flex items-center justify-center fixed bottom-0 left-0 z-10">
+                        <button id="addDayFooterBtn" class="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> הוסף יום
+                        </button>
+                    </footer>
+                </section>
+            </main>
+        </div>
+        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        <script>
     // Shared state and config
     let placesData = null; // unified shared data for both editor and map
     let dev_mode = false; // set true to auto-load places.json on startup
@@ -801,7 +820,30 @@
     }
 
     function init_map() {
-
+        if (!map)
+        {
+            map = L.map('map').setView([20,0],2); baseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18, attribution:'© OpenStreetMap contributors' }).addTo(map);
+        }
+        map.on('contextmenu', function(e) {
+            if (e.originalEvent) e.originalEvent.preventDefault();
+            const lat = e.latlng.lat.toFixed(4);
+            const lng = e.latlng.lng.toFixed(4);
+            const text = `${lat},${lng}`;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    if (typeof showToast === 'function') {showToast('קואורדינטות: ' + text);}
+                });
+            } else {
+                // fallback for older browsers
+                const temp = document.createElement('textarea');
+                temp.value = text;
+                document.body.appendChild(temp);
+                temp.select();
+                try { document.execCommand('copy'); } catch (err) {}
+                document.body.removeChild(temp);
+                if (typeof showToast === 'function') {showToast('קואורדינטות: ' + text);}
+            }
+        });
     }
 
     // File loader wiring (only in editor tab)
@@ -816,46 +858,17 @@
             renderEditor();
             // do not auto-enable routing here; showMap will enable and refresh
             // but populate map overlays (preview)
-            if (!map) { 
-                map = L.map('map').setView([20,0],2); baseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18, attribution:'© OpenStreetMap contributors' }).addTo(map); }
+            init_map();
             loadPlaces(placesData);
         }
     function showMap() { editorContainer.classList.add('hidden'); mapContainer.classList.remove('hidden'); if (headerControlsEl) headerControlsEl.classList.remove('hidden'); routingEnabled = true; refreshMapDebounced(200); }
     function showEditor() { mapContainer.classList.add('hidden'); editorContainer.classList.remove('hidden'); if (headerControlsEl) headerControlsEl.classList.add('hidden'); routingEnabled = false; refreshMapDebounced(0); }
     mapTab.onclick = showMap; editorTab.onclick = showEditor; // default: show map
-    showMap();
-
-        // Initialize map once (world view)
-        if (!map) { 
-            map = L.map('map').setView([20,0],2); baseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18, attribution:'© OpenStreetMap contributors' }).addTo(map); }
-
-        if (map)
-        {
-            // Add right-click to copy lat/lng and prevent default context menu
-            map.on('contextmenu', function(e) {
-                if (e.originalEvent) e.originalEvent.preventDefault();
-                const lat = e.latlng.lat.toFixed(4);
-                const lng = e.latlng.lng.toFixed(4);
-                const text = `${lat},${lng}`;
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(text).then(() => {
-                        if (typeof showToast === 'function') {showToast('קואורדינטות: ' + text);}
-                    });
-                } else {
-                    // fallback for older browsers
-                    const temp = document.createElement('textarea');
-                    temp.value = text;
-                    document.body.appendChild(temp);
-                    temp.select();
-                    try { document.execCommand('copy'); } catch (err) {}
-                    document.body.removeChild(temp);
-                    if (typeof showToast === 'function') {showToast('קואורדינטות: ' + text);}
-                }
-            });
-        }
-
-        // File loader in editor
-        const fileInput = document.getElementById('fileLoader'); const fileBtn = document.getElementById('fileLoaderBtn');
+    // Initialize map once (world view)
+    init_map();
+    showMap();        
+    // File loader in editor
+    const fileInput = document.getElementById('fileLoader'); const fileBtn = document.getElementById('fileLoaderBtn');
     fileBtn.addEventListener('click', function() { fileInput.click(); });
         fileInput.addEventListener('change', function(e) {
             const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
@@ -906,7 +919,8 @@
         }});
 
         // Dev mode auto-load
-        if (dev_mode) {
+        if (dev_mode) 
+        {
             fetch('places.json').then(r => r.json()).then(data => { placesData = data; renderEditor(); loadPlaces(placesData); });
         }
 
@@ -915,6 +929,6 @@
     if (addDayFooterBtn) addDayFooterBtn.addEventListener('click', function() { addDay(); });
     
     });
-    </script>
-</body>
+        </script>
+    </body>
 </html>
