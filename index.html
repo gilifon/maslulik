@@ -798,7 +798,21 @@
     // Save/download
     document.addEventListener('click', function(e) { if (e.target && e.target.id === 'saveBtn') {
         const b = ensureTrip(); const blob = new Blob([JSON.stringify(b, null, 4)], {type:'application/json'});
-        const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'places.json'; a.click(); URL.revokeObjectURL(url); showToast('מסלוליק נשמר בהצלחה!');
+
+        const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url;
+        // derive filename from trip name when available
+        try {
+            const t = ensureTrip(); let fname = (t && t.name) ? String(t.name).trim() : '';
+            if (fname) {
+                // remove illegal filename chars and collapse whitespace
+                fname = fname.replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_');
+                if (!fname.toLowerCase().endsWith('.json')) fname = fname + '.json';
+            } else {
+                fname = 'places.json';
+            }
+            a.download = fname;
+        } catch (e) { a.download = 'places.json'; }
+        a.click(); URL.revokeObjectURL(url); showToast('מסלוליק נשמר בהצלחה!');
     }});
 
     // Export static HTML (self-contained, no external refs)
