@@ -230,6 +230,49 @@
         }
     }
 
+    // Clipboard helpers for attractions
+    const ATTR_CLIPBOARD_KEY = 'msl_clipboard_attraction';
+
+    function copyAttractionToClipboard(dayIdx, attrIdx) {
+        try {
+            const days = getDays();
+            if (!days || !days[dayIdx] || !days[dayIdx].attractions || !days[dayIdx].attractions[attrIdx]) return;
+            const a = days[dayIdx].attractions[attrIdx];
+            const copyObj = JSON.parse(JSON.stringify(a));
+            // store in localStorage for persistence and for cross-tab use
+            try { localStorage.setItem(ATTR_CLIPBOARD_KEY, JSON.stringify(copyObj)); } catch (e) {}
+            // also try system clipboard
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(JSON.stringify(copyObj)).catch(()=>{});
+            }
+            showToast('הפעילות הועתקה');
+        } catch (e) { showToast('שגיאה בהעתקה', true); }
+    }
+
+    function pasteAttractionToDay(dayIdx) {
+        try {
+            // read from localStorage clipboard first
+            const raw = localStorage.getItem(ATTR_CLIPBOARD_KEY);
+            if (!raw) { showToast('אין פעילות מועתקת', true); return; }
+            const copied = JSON.parse(raw);
+            if (!copied || typeof copied !== 'object') { showToast('תוכן לא תקין', true); return; }
+            const days = getDays();
+            if (!Array.isArray(days)) return;
+            if (!days[dayIdx]) {
+                // create empty days up to this index
+                for (let i = days.length; i <= dayIdx; i++) days.push({ day: i+1, dow: '', attractions: [] });
+            }
+            if (!Array.isArray(days[dayIdx].attractions)) days[dayIdx].attractions = [];
+            // append a cloned attraction
+            days[dayIdx].attractions.push(JSON.parse(JSON.stringify(copied)));
+            setDays(days);
+            renderEditor();
+            refreshMapDebounced();
+            saveTripToStorageDebounced(0);
+            showToast('הפעילות הודבקה');
+        } catch (e) { showToast('שגיאה בהדבקה', true); }
+    }
+
     function loadTripFromStorage() {
         // Read and sanitize persisted trip data. If data is malformed, return null.
         try {
@@ -616,9 +659,12 @@
                             ${hebrewDays.map(d => `<option value='${d}'${d === dayObj.dow ? ' selected' : ''}>${d}</option>`).join('')}
                         </select>
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
+                        <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות" onclick="pasteAttractionToDay(${dayIdx})"><i class="fa-solid fa-paste"></i></button>
                     </div>
                     <div class="space-y-2" id="attractions-${dayIdx}"></div>
-                    <button class="mt-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700" onclick="addAttraction(${dayIdx})"><i class="fa-solid fa-plus ml-1"></i>הוסף פעילות</button>
+                    <div class="flex gap-2 mt-2">
+                        <button class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700" onclick="addAttraction(${dayIdx})"><i class="fa-solid fa-plus ml-1"></i> הוסף פעילות</button>
+                    </div>
                 `;
             } else {
                 if (_days[0] && _days[0].dow) { let firstIdx = hebrewDays.indexOf(_days[0].dow); dayObj.dow = hebrewDays[(firstIdx + dayIdx) % hebrewDays.length]; } else { dayObj.dow = hebrewDays[dayIdx % hebrewDays.length]; }
@@ -628,9 +674,12 @@
                         <input type="color" class="w-8 h-8 rounded" value="${dayObj.color || '#ff0000'}" onchange="editDayField(${dayIdx},'color',this.value)">
                         <span class="text-lg font-bold">(${dayObj.dow})</span>
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
+                        <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות" onclick="pasteAttractionToDay(${dayIdx})"><i class="fa-solid fa-paste"></i></button>
                     </div>
                     <div class="space-y-2" id="attractions-${dayIdx}"></div>
-                    <button class="mt-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700" onclick="addAttraction(${dayIdx})"><i class="fa-solid fa-plus ml-1"></i>הוסף פעילות</button>
+                    <div class="flex gap-2 mt-2">
+                        <button class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700" onclick="addAttraction(${dayIdx})"><i class="fa-solid fa-plus ml-1"></i> הוסף פעילות</button>
+                    </div>
                 `;
             }
             container.appendChild(dayDiv);
@@ -709,7 +758,7 @@
             const isExpanded = !!attr._commentsExpanded;
             const commentBtnClass = (attr.comments && attr.comments.trim()) ? 'text-green-300' : 'text-gray-400';
             const enabled = attr.enabled !== false; // default true
-            attrDiv.innerHTML = `
+                attrDiv.innerHTML = `
                 <button class="px-1 py-1 text-blue-400 hover:text-blue-600 order-btn" title="שנה סדר" draggable="true"><i class="fa-solid fa-bars"></i></button>
                 <button class="px-1 py-1 ml-1 ${commentBtnClass} hover:text-gray-200 comment-toggle-btn" title="הערות" style="font-size:1.2em;">${isExpanded ? '<i class=\"fa-solid fa-chevron-up\"></i>' : '<i class=\"fa-solid fa-comments\"></i>'}</button>
                 <button class="ml-1 toggle-attraction-btn ${enabled ? 'text-green-500' : 'text-gray-300'} rounded px-1 py-1" title="${enabled ? 'מוצג במפה' : 'מוסתר מהמפה'}">${enabled ? '<i class=\"fa-solid fa-toggle-on\"></i>' : '<i class=\"fa-solid fa-toggle-off\"></i>'}</button>
@@ -720,6 +769,7 @@
                 <button class="text-blue-400 hover:text-blue-600 location-btn" title="מפה"><i class="fa-solid fa-location-dot"></i></button>
                 <button class="text-sky-300 hover:text-sky-300 waze-btn" title="Waze"><i class="fa-brands fa-waze"></i></button>
                 <button class="text-green-400 hover:text-green-600 url-btn" title="קישור"><i class="fa-solid fa-link"></i></button>
+                <button class="text-orange-300 hover:text-orange-100 copy-attr-btn" title="העתק פעילות" onclick="copyAttractionToClipboard(${dayIdx},${attrIdx})"><i class="fa-solid fa-copy"></i></button>
                 <button class="text-red-400 hover:text-red-600" title="מחק פעילות" onclick="deleteAttraction(${dayIdx},${attrIdx})"><i class="fa-solid fa-trash"></i></button>
             `;
             // Add a separate row for comments (after attrDiv)
