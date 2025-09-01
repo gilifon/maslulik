@@ -11,6 +11,16 @@
         <style>
         #map { height: 80vh; width: 100%; border-radius: 0.6rem; box-shadow: 0 2px 12px rgba(0,0,0,0.12); }
         .leaflet-control { font-size: 1rem; }
+        .animated-fade {
+            animation: fadeInOut 5s alternate; /* Applies the animation */
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; } /* Starts hidden */
+            20% { opacity: 1; } /* Fully visible at 50% of animation */
+            80% { opacity: 1; } /* Fully visible at 50% of animation */
+            100% { opacity: 0; } /* Fades back out */
+        }
         </style>
     </head>
     <body>
@@ -35,7 +45,7 @@
             <!-- Main content: Map tab and Editor tab (hidden/shown by tabs) -->
             <main class="">
                 <!-- Toast Notification -->
-                <div id="toast" class="fixed top-4 mr-50 z-50 hidden">
+                <div id="toast" class="fixed top-4 mr-50 z-50 hidden animated-fade">
                     <!-- RTL: put toast left -->
                     <div id="toastMsg" class="px-4 py-2 rounded shadow-lg font-bold flex items-center gap-2"></div>
                 </div>
@@ -809,7 +819,7 @@
         const toast = document.getElementById('toast'); const toastMsg = document.getElementById('toastMsg');
         toastMsg.className = isError ? 'bg-red-600 text-white px-4 py-2 rounded shadow-lg font-bold flex items-center gap-2' : 'bg-green-600 text-white px-4 py-2 rounded shadow-lg font-bold flex items-center gap-2';
         toastMsg.innerHTML = isError ? `<i class='fa-solid fa-xmark text-xl'></i> ${message}` : `<i class='fa-solid fa-check text-xl'></i> ${message}`;
-        toast.classList.remove('hidden'); setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+        toast.classList.remove('hidden'); setTimeout(() => { toast.classList.add('hidden'); }, 5000);
     }
     function showConfirmModal(message, callback) {
         const modal = document.getElementById('confirmModal'); const msg = document.getElementById('confirmModalMsg'); const yesBtn = document.getElementById('confirmYes'); const noBtn = document.getElementById('confirmNo'); msg.textContent = message; modal.classList.remove('hidden');
