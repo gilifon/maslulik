@@ -202,10 +202,32 @@
         saveTripTimer = setTimeout(() => {
             try {
                 localStorage.setItem(LS_TRIP_KEY, JSON.stringify(trip));
+                // Also persist into saved-trips library automatically when trip has a name
+                try {
+                    persistTripToSavedLibrary(trip);
+                } catch (e) {}
             } catch (e) {
                 // ignore storage errors
             }
         }, delay);
+    }
+
+    // Persist given trip into the saved trips localStorage key (msl_saved_trips).
+    // This helper is safe to call repeatedly; it will only write when trip has a non-empty name.
+    function persistTripToSavedLibrary(t) {
+        try {
+            if (!t || typeof t !== 'object') return;
+            const name = (typeof t.name === 'string') ? t.name.trim() : '';
+            if (!name) return; // require a name to save into the library
+            const key = 'msl_saved_trips';
+            const raw = localStorage.getItem(key);
+            const store = raw ? JSON.parse(raw) : {};
+            // clone to avoid retaining references
+            store[name] = JSON.parse(JSON.stringify(t));
+            localStorage.setItem(key, JSON.stringify(store));
+        } catch (e) {
+            // ignore localStorage errors
+        }
     }
 
     function loadTripFromStorage() {
