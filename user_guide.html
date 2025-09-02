@@ -6,13 +6,37 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
-<body class="bg-gray-900 text-gray-300 antialiased" dir="rtl">
-  <div class="max-w-4xl mx-auto p-6">
-    <h1 class="text-2xl font-bold mb-6">מסלוליק - מדריך שימוש קצר</h1>
+<body class="bg-gray-600 text-gray-100 antialiased" dir="rtl">
+  <div class="max-w-6xl mx-auto p-6">
+    <section class="mb-6 bg-gray-900 rounded-lg shadow-lg p-4 text-center">
+      <h1 class="text-3xl font-bold"><i class="fa-solid fa-map-location-dot text-blue-400"></i> מסלוליק - מדריך שימוש קצר</h1>
+    </section>
 
     <!-- Top header (global) -->
-    <section class="mb-6">
+    <section class="mb-6 bg-gray-900 rounded-lg shadow-lg p-4">
       <h2 class="text-lg font-semibold mb-3">סרגל עליון</h2>
+      <div class="flex justify-between gap-2 bg-gray-600 text-gray-200 rounded-lg p-2 mb-2">
+          <div class="flex items-center gap-2">
+              <h1 class="text-3xl font-bold drop-shadow-lg flex items-center gap-3">
+                  <i class="fa-solid fa-map-location-dot text-blue-400"></i>
+                  <span>מסלוליק</span>
+              </h1>
+          </div>
+          <div class="flex items-center gap-2 mt-2 md:mt-0">
+              <button id="savedTripsBtn" class="px-3 py-1 bg-orange-700 text-white rounded hover:bg-orange-600">
+              <i class="fa-solid fa-list ml-2"></i>המסלולים שלי
+              </button>
+              <button id="tabMap" class="px-3 py-1 bg-blue-700 text-white rounded hover:bg-blue-600">
+                  <i class="fa-solid fa-globe ml-2"></i>מפה
+              </button>
+              <button id="tabEditor" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">
+                  <i class="fa-solid fa-pencil ml-2"></i>עורך
+              </button>
+              <a href="user_guide.html" target="_blank"><button id="userGuide" class="px-3 py-1 text-white rounded">
+                  <i class="fa-solid fa-circle-info"></i>
+              </button></a>
+          </div>
+      </div>
       <div class="space-y-3">
         <div class="flex items-center justify-between gap-4">
           <div class="text-sm">רשימת המסלולים השמורים. תוכלו לטעון/למחוק/לשמור מסלולים.</div>
@@ -31,7 +55,7 @@
     </section>
 
     <!-- Map controls -->
-    <section class="mb-6">
+    <section class="mb-6 bg-gray-900 rounded-lg shadow-lg p-4">
       <h2 class="text-lg font-semibold mb-3">הגדרות מפה</h2>
       <div class="flex items-center justify-between gap-4">
         <div class="text-sm">החלפה בין הצגת מרחקים (מסלולי נסיעה) לבין מסלול סכמטי.</div>
@@ -40,7 +64,7 @@
     </section>
 
     <!-- Editor bar -->
-    <section class="mb-6">
+    <section class="mb-6 bg-gray-900 rounded-lg shadow-lg p-4">
       <h2 class="text-lg font-semibold mb-3">סרגל העורך</h2>
       <div class="flex items-center gap-2 bg-gray-600 text-gray-200 rounded-lg p-2 mb-2">
           <button id="fileLoaderBtn" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center">
@@ -96,8 +120,36 @@
     </section>
 
     <!-- Saved trips modal summary -->
-    <section class="mb-6">
+    <section class="mb-6 bg-gray-900 rounded-lg shadow-lg p-4">
       <h2 class="text-lg font-semibold mb-3">מסלולים שמורים</h2>
+      <div class="bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-xl text-right">
+          <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold"><i class="fa-solid fa-map-location-dot ml-2"></i>המסלולים שלי</h3>
+              <div class="flex items-center gap-2">
+                  <button id="saveToLibraryBtn" class="px-3 py-1 bg-green-600 text-white rounded"><i class="fa-solid fa-save ml-2"></i>שמור את המסלול הנוכחי</button>
+                  <button id="closeSavedTripsBtn" class="px-3 py-1 bg-gray-600 text-white rounded">סגור</button>
+              </div>
+          </div>
+          <div id="savedTripsList" class="flex flex-col gap-2 max-h-80 overflow-auto"><div class="flex items-center justify-between p-2 bg-gray-700 rounded">
+      <div class="flex flex-col text-right">
+          <strong><i class="fa-solid fa-ellipsis-vertical ml-2"></i>היער השחור 2025 (5 ימים)</strong>
+          <small class="text-gray-400">טיול משפחתי ליער השחור בגרמניה + פארק אירופה - ספטמבר 2025</small>
+          
+      </div>
+      <div class="flex gap-2">
+          <button class="load-trip-btn px-2 py-1 bg-blue-600 text-white rounded"><i class="fa-solid fa-upload ml-2"></i>טען</button>
+          <button class="delete-trip-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded"><i class="fa-solid fa-trash-can"></i></button>
+      </div></div><div class="flex items-center justify-between p-2 bg-gray-700 rounded">
+      <div class="flex flex-col text-right">
+          <strong><i class="fa-solid fa-ellipsis-vertical ml-2"></i>קופנהגן 2025 (5 ימים)</strong>
+          <small class="text-gray-400">סמינר AI - אוקטובר 2025</small>
+          
+      </div>
+      <div class="flex gap-2">
+          <button class="load-trip-btn px-2 py-1 bg-blue-600 text-white rounded"><i class="fa-solid fa-upload ml-2"></i>טען</button>
+          <button class="delete-trip-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded"><i class="fa-solid fa-trash-can"></i></button>
+      </div></div></div>
+      </div>
       <div class="space-y-3">
         <div class="flex items-center justify-between gap-4">
           <div class="text-sm">שמור את המסלול הנוכחי ברשימת המסלולים (נדרש שם מסלול).</div>
@@ -115,54 +167,94 @@
     </section>
 
     <!-- Editor: days and attractions (sample buttons) -->
-    <section class="mb-6">
-      <h2 class="text-lg font-semibold mb-3">העורך - ימים ופעילויות</h2>
+    <section class="mb-6 bg-gray-900 rounded-lg shadow-lg p-4">
+      <h2 class="text-lg font-semibold mb-3">הגדרת ימי פעילות</h2>
+      <div class="flex items-center gap-2 mb-2 cursor-move bg-gray-700 text-white rounded px-2 py-1 day-header" draggable="true">
+          <span class="text-lg font-bold">יום 1</span>
+          <input type="color" class="w-8 h-8 rounded" value="#e53e3e">
+          <select class="input w-24 px-2 py-1 rounded border bg-white text-black">
+              <option value="ראשון" selected="">ראשון</option>
+          </select>
+          <button class="text-red-400 hover:text-red-600" title="מחק יום"><i class="fa-solid fa-trash"></i></button>
+          <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות"><i class="fa-solid fa-paste"></i></button>
+      </div>
       <div class="grid grid-cols-1 gap-3">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between gap-4">
           <div class="text-sm">הוסף יום חדש לתוכנית.</div>
           <button class="px-3 py-1 bg-green-700 text-white rounded hover:bg-green-800"><i class="fa-solid fa-plus ml-2"></i>הוסף יום</button>
         </div>
-        <div class="flex items-center justify-between">
-          <div class="text-sm">מחק את היום הנוכחי (אישור יידרש).</div>
-          <button class="text-red-400 hover:text-red-600" title="מחק יום"><i class="fa-solid fa-trash"></i></button>
+        <div class="flex items-center justify-between gap-4">
+          <div class="text-sm">בחר את היום בשבוע בו מתחיל המסלול.</div>
+          <select class="input w-24 px-2 py-1 rounded border bg-white text-black">
+              <option value="ראשון" selected="">ראשון</option>
+          </select>
         </div>
-        <div class="flex items-center justify-between">
+        <div class="flex">
+          <input type="color" class="w-6 h-6 rounded mx-3" value="#e53e3e">
+          <div class="text-sm">בחר צבע מייצג.</div>
+        </div>
+        <div class="flex">
+          <button class="text-red-400 hover:text-red-600 px-4" title="מחק יום"><i class="fa-solid fa-trash"></i></button>
+          <div class="text-sm">מחק את היום הנוכחי (אישור יידרש).</div>  
+        </div>
+        <div class="flex">
+          <button class="text-orange-300 hover:text-orange-300 px-4" title="הדבק פעילות"><i class="fa-solid fa-paste"></i></button>
           <div class="text-sm">הדבק את הפעילות שהועתקה אל סוף היום.</div>
-          <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות"><i class="fa-solid fa-paste"></i></button>
+          
         </div>
       </div>
     </section>
 
-    <section class="mb-6">
+    <section class="mb-6 bg-gray-900 rounded-lg shadow-lg p-4">
       <h2 class="text-lg font-semibold mb-3">שורת פעילות</h2>
-      <div class="space-y-2">
-        <div class="flex items-center justify-between">
-          <div class="text-sm">גרור לשינוי סדר או העבר בין ימים.</div>
-          <button class="text-blue-400 hover:text-blue-600 order-btn" title="שנה סדר"><i class="fa-solid fa-bars"></i></button>
-        </div>
-        <div class="flex items-center justify-between">
-          <div class="text-sm">פתח/סגור את שדה ההערות.</div>
-          <button class="text-green-300 hover:text-gray-200 comment-toggle-btn" title="הערות"><i class="fa-solid fa-comments"></i></button>
-        </div>
-        <div class="flex items-center justify-between">
-          <div class="text-sm">הצג\הסתר את הפעילות על המפה</div>
-          <button class="text-green-500 rounded" title="מוצג במפה"><i class="fa-solid fa-toggle-on"></i></button>
-        </div>
-        <div class="flex items-center justify-between">
-          <div class="text-sm">פתח את המיקום בגוגל מפות</div>
+      <div class="flex items-center gap-2 bg-gray-800 text-gray-300 rounded px-2 py-1 mb-4 w-full" data-attr-idx="0">
+          <button class="px-1 py-1 text-blue-400 hover:text-blue-600 order-btn" title="שנה סדר" draggable="true"><i class="fa-solid fa-bars"></i></button>
+          <button class="px-1 py-1 ml-1 text-gray-400 hover:text-gray-200 comment-toggle-btn" title="הערות" style="font-size:1.2em;"><i class="fa-solid fa-comments"></i></button>
+          <button class="ml-1 toggle-attraction-btn text-green-500 rounded px-1 py-1" title="מוצג במפה"><i class="fa-solid fa-toggle-on"></i></button>
+          <input class="input bg-gray-800 text-gray-200 w-32 px-2 py-1 rounded border time-input flatpickr-input" type="text" data-day="1" data-attr="0" value="09:00" placeholder="hh:mm" readonly="readonly">
+          <input class="input bg-gray-800 text-gray-200 w-64 px-2 py-1 rounded border" value="ארוחת בוקר במלון">
+          <input class="input bg-gray-800 text-gray-200 w-64 px-2 py-1 rounded border coordinates" type="text" value="32.888,35.5768">
+          <input class="input bg-gray-800 text-gray-200 w-64 px-2 py-1 rounded border" type="url" placeholder="https://..." value="" dir="ltr">
           <button class="text-blue-400 hover:text-blue-600 location-btn" title="מפה"><i class="fa-solid fa-location-dot"></i></button>
-        </div>
-        <div class="flex items-center justify-between">
-          <div class="text-sm">פתח את המיקום בוויז</div>
           <button class="text-sky-300 hover:text-sky-300 waze-btn" title="Waze"><i class="fa-brands fa-waze"></i></button>
-        </div>
-        <div class="flex items-center justify-between">
-          <div class="text-sm">העתק את הפעילות.</div>
+          <button class="text-green-400 hover:text-green-600 url-btn" title="קישור"><i class="fa-solid fa-link"></i></button>
           <button class="text-orange-300 hover:text-orange-100 copy-attr-btn" title="העתק פעילות"><i class="fa-solid fa-copy"></i></button>
-        </div>
-        <div class="flex items-center justify-between">
-          <div class="text-sm">מחק את הפעילות.</div>
           <button class="text-red-400 hover:text-red-600" title="מחק פעילות"><i class="fa-solid fa-trash"></i></button>
+      </div>
+      <div class="space-y-2">
+        <div class="flex">
+          <button class="text-blue-400 hover:text-blue-600 order-btn px-4" title="שנה סדר"><i class="fa-solid fa-bars"></i></button>
+          <div class="text-sm">גרור לשינוי סדר או העבר בין ימים.</div>
+          
+        </div>
+        <div class="flex">
+          <button class="text-green-300 hover:text-gray-200 comment-toggle-btn px-4" title="הערות"><i class="fa-solid fa-comments"></i></button>
+          <div class="text-sm">פתח/סגור את שדה ההערות.</div>
+          
+        </div>
+        <div class="flex">
+          <button class="text-green-500 rounded px-4" title="מוצג במפה"><i class="fa-solid fa-toggle-on"></i></button>
+          <div class="text-sm">הצג\הסתר את הפעילות על המפה.</div>
+          
+        </div>
+        <div class="flex">
+          <button class="text-blue-400 hover:text-blue-600 location-btn px-4" title="מפה"><i class="fa-solid fa-location-dot"></i></button>
+          <div class="text-sm">פתח את המיקום בגוגל מפות.</div>
+          
+        </div>
+        <div class="flex">
+          <button class="text-sky-300 hover:text-sky-300 waze-btn px-4" title="Waze"><i class="fa-brands fa-waze"></i></button>
+          <div class="text-sm">פתח את המיקום בוויז.</div>
+          
+        </div>
+        <div class="flex">
+          <button class="text-orange-300 hover:text-orange-100 copy-attr-btn px-4" title="העתק פעילות"><i class="fa-solid fa-copy"></i></button>
+          <div class="text-sm">העתק את הפעילות.</div>
+          
+        </div>
+        <div class="flex">
+          <button class="text-red-400 hover:text-red-600 px-4" title="מחק פעילות"><i class="fa-solid fa-trash"></i></button>
+          <div class="text-sm">מחק את הפעילות.</div>
         </div>
       </div>
     </section>
