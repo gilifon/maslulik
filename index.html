@@ -916,7 +916,17 @@
     function exportStaticHtml() {
         if (!getDays() || getDays().length === 0) { showToast('אין מה לייצא', true); return; }
         // Minimal inline CSS to keep it readable offline
-    const css = `body{font-family:Arial,Helvetica,sans-serif;background:#0b1220;color:#e5e7eb;padding:20px;line-height:1.4}h1{color:#60a5fa;margin-bottom:8px}h2{color:#bfdbfe;margin:0 0 8px 0; font-size: 18px}a{color:#93c5fd;text-decoration:none} .day{background:#111827;padding:12px;border-radius:8px;margin-bottom:14px;border:1px solid #1f2937; font-size:16px} .title-row{display:flex;align-items:center;gap:10px;margin-bottom:16px} .title-row h2{margin:0} .attr{padding:10px;border-radius:6px;background:#0b1220;border:1px solid #273142;margin:10px 0;display:flex;flex-direction:column;gap:6px} .attr-header{display:flex;align-items:center;gap:10px} .dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid rgba(255,255,255,0.06)} .links{display:flex;gap:12px;flex-wrap:wrap;align-items:center} .icon{width:18px;height:18px;vertical-align:middle;margin-left:6px;fill:currentColor}`;
+    const css = `body{font-family:Arial,Helvetica,sans-serif;background:#0b1220;color:#e5e7eb;padding:10px;line-height:1.1}
+                 h1{color:#60a5fa;margin-bottom:2px}h2{color:#bfdbfe;margin:0 0 8px 0; font-size: 18px}
+                 a{color:#93c5fd;text-decoration:none} 
+                .day{background:#111827;padding:12px;border-radius:8px;margin-bottom:14px;border:1px solid #1f2937; font-size:16px} 
+                .title-row{display:flex;align-items:center;gap:10px;margin-bottom:16px} 
+                .title-row h2{margin:0} 
+                .attr{padding:5px;border-radius:6px;background:#0b1220;border:1px solid #273142;margin:6px 0;display:flex;flex-direction:column;gap:2px} 
+                .attr-header{display:flex;align-items:center;gap:10px} 
+                .dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid rgba(255,255,255,0.06)} 
+                .links{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:4px} 
+                .icon{width:18px;height:18px;vertical-align:middle;margin-left:6px;fill:currentColor}`;
 
         // Inline SVG icons
         const svgGm = `<?xml version="1.0" encoding="utf-8"?><svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="20" height="20" viewBox="0 0 92.25 122.88" style="enable-background:new 0 0 92.25 122.88" xml:space="preserve"><style type="text/css">.st0{fill-rule:evenodd;clip-rule:evenodd;}</style><g><path class="st0" d="M68.51,106.28c-5.59,6.13-12.1,11.62-19.41,16.06c-0.9,0.66-2.12,0.74-3.12,0.1 c-10.8-6.87-19.87-15.12-27-24.09C9.14,86.01,2.95,72.33,0.83,59.15c-2.16-13.36-0.14-26.22,6.51-36.67 c2.62-4.13,5.97-7.89,10.05-11.14C26.77,3.87,37.48-0.08,48.16,0c10.28,0.08,20.43,3.91,29.2,11.92c3.08,2.8,5.67,6.01,7.79,9.49 c7.15,11.78,8.69,26.8,5.55,42.02c-3.1,15.04-10.8,30.32-22.19,42.82V106.28L68.51,106.28z M46.12,23.76 c12.68,0,22.95,10.28,22.95,22.95c0,12.68-10.28,22.95-22.95,22.95c-12.68,0-22.95-10.27-22.95-22.95 C23.16,34.03,33.44,23.76,46.12,23.76L46.12,23.76z"/></g></svg>`;
@@ -942,7 +952,17 @@
                     const urlHtml = a.url ? `<a href="${a.url}" target="_blank" rel="noopener">${svgExt}</a>` : '';
                     const timeHtml = a.time ? `<span>(${a.time})</span>` : '';
                     const commentsHtml = a.comments ? `<div class="attr-comments" style="background:#22223b;color:#f1f1f1;padding:6px 10px;border-radius:6px;margin-top:4px;white-space:pre-line;font-size:15px;">${a.comments.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>` : '';
-                    bodyHtml += `<div class="attr"><div class="attr-header"><span class="dot" style="background:${dayColor}"></span><strong>${a.name || ''}</strong>${timeHtml}</div><div class="links"><a href="${gm}" target="_blank" rel="noopener">${svgGm}</a><a href="${wz}" target="_blank" rel="noopener">${svgWz}</a>${urlHtml}</div>${commentsHtml}</div>`;
+                    bodyHtml += `<div class="attr">
+                                    <div class="attr-header">
+                                        <strong>${timeHtml}</strong>${a.name || ''}
+                                    </div>
+                                    <div class="links">
+                                        <a href="${gm}" target="_blank" rel="noopener">${svgGm}</a>
+                                        <a href="${wz}" target="_blank" rel="noopener">${svgWz}</a>
+                                        ${urlHtml}
+                                    </div>
+                                    ${commentsHtml}
+                                </div>`;
                 });
             } else {
                 bodyHtml += `<div class="attr">אין אטרקציות</div>`;
