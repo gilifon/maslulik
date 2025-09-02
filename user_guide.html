@@ -12,22 +12,27 @@
 
     <!-- Top header (global) -->
     <section class="mb-6">
-      <h2 class="text-lg font-semibold mb-3">סרגל עליון (גלובלי)</h2>
+      <h2 class="text-lg font-semibold mb-3">סרגל עליון</h2>
       <div class="space-y-3">
         <div class="flex items-center justify-between gap-4">
-          <div class="text-sm">מעבר לתצוגת המפה והסתרת העורך. בהצגת המפה מופעלות חישובי מסלולים.</div>
+          <div class="text-sm">רשימת המסלולים השמורים. תוכלו לטעון/למחוק/לשמור מסלולים.</div>
+          <button id="savedTripsBtn" class="px-3 py-1 bg-orange-700 text-white rounded hover:bg-orange-600"><i class="fa-solid fa-list ml-2"></i>המסלולים שלי</button>
+        </div>
+        <div class="flex items-center justify-between gap-4">
+          <div class="text-sm">מעבר לתצוגת מפה - הצגה של המסלול על מפת העולם.</div>
           <button class="px-3 py-1 bg-blue-700 text-white rounded hover:bg-blue-600 flex items-center"><i class="fa-solid fa-globe ml-2"></i>מפה</button>
         </div>
         <div class="flex items-center justify-between gap-4">
-          <div class="text-sm">פתיחת העורך לעריכה של ימים, פעילויות וייבוא/ייצוא.</div>
+          <div class="text-sm">מעבר לתצוגת עורך - מאפשר עריכה של ימים ופעילויות.</div>
           <button class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center"><i class="fa-solid fa-pencil ml-2"></i>עורך</button>
         </div>
+        
       </div>
     </section>
 
     <!-- Map controls -->
     <section class="mb-6">
-      <h2 class="text-lg font-semibold mb-3">בקרות על המפה</h2>
+      <h2 class="text-lg font-semibold mb-3">הגדרות מפה</h2>
       <div class="flex items-center justify-between gap-4">
         <div class="text-sm">החלפה בין הצגת מרחקים (מסלולי נסיעה) לבין מסלול סכמטי.</div>
         <button id="guide-toggle" class="relative w-12 h-6 rounded-full bg-blue-500 flex items-center px-1"><span class="absolute left-1 top-1 w-4 h-4 rounded-full bg-white shadow"></span></button>
@@ -37,14 +42,35 @@
     <!-- Editor bar -->
     <section class="mb-6">
       <h2 class="text-lg font-semibold mb-3">סרגל העורך</h2>
+      <div class="flex items-center gap-2 bg-gray-600 text-gray-200 rounded-lg p-2 mb-2">
+          <button id="fileLoaderBtn" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center">
+              <i class="fa-solid fa-folder-open ml-2"></i>יבוא מסלול
+          </button>
+          <!-- Trip metadata (name & description) -->
+          <div class="flex rounded">
+              <div class="flex bg-gray-800 text-gray-300 rounded">
+                  <button class="px-3 py-1 bg-gray-800 text-gray-200 rounded border w-26 text-right">שם המסלול</button>
+              </div>
+              <div class="flex bg-gray-800 text-gray-300 rounded mr-4">
+                  <button class="px-3 py-1 bg-gray-800 text-gray-200 rounded border w-48 text-right">תיאור קצר</button>
+              </div>
+          </div>
+          <input type="file" id="fileLoader" accept="application/json" class="hidden">
+          <div class="flex-1"></div>
+          <button id="clearAllBtn" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 flex items-center" aria-label="נקה את כל המסלול">
+              <i class="fa-solid fa-trash-can ml-2"></i>נקה הכל
+          </button>
+          <button class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center">
+              <i class="fa-solid fa-save ml-2"></i>שמור
+          </button>
+          <button class="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center" title="ייצא HTML סטטי">
+              <i class="fa-solid fa-file-arrow-down ml-2"></i>ייצא
+          </button>
+      </div>
       <div class="space-y-3">
         <div class="flex items-center justify-between gap-4">
           <div class="text-sm">טעינה של מסלול מקובץ.</div>
-          <button class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center"><i class="fa-solid fa-folder-open ml-2"></i>טען מסלוליק</button>
-        </div>
-        <div class="flex items-center justify-between gap-4">
-          <div class="text-sm">רשימת המסלולים השמורים; תוכלו לטעון/למחוק/לשמור מסלולים.</div>
-          <button id="savedTripsBtn" class="px-3 py-1 bg-orange-700 text-white rounded hover:bg-orange-600"><i class="fa-solid fa-list ml-2"></i>המסלולים שלי</button>
+          <button class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center"><i class="fa-solid fa-folder-open ml-2"></i>יבוא מסלול</button>
         </div>
         <div class="flex items-center justify-between gap-4">
           <div class="text-sm">שם המסלול - משמש גם כשם הקובץ ולצורך זיהוי ב 'המסלולים שלי'.</div>
