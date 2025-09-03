@@ -657,11 +657,45 @@
             todos.forEach((todo, idx) => {
                 const item = document.createElement('div');
                 item.className = 'flex items-center gap-2 bg-gray-800 rounded px-2 py-1';
+                item.setAttribute('draggable', 'false');
+                item.setAttribute('data-todo-idx', idx);
                 item.innerHTML = `
+                    <span class="cursor-move px-1 text-blue-400 order-btn" title="שנה סדר" draggable="true"><i class="fa-solid fa-bars"></i></span>
                     <button class="toggle-todo-btn ${todo.done ? 'text-green-400' : 'text-gray-400'}" title="סמן כבוצע"><i class="fa-solid fa-check"></i></button>
                     <input class="edit-todo-input w-full px-2 py-1 rounded border bg-gray-800 text-white" type="text" value="${todo.text}" />
                     <button class="delete-todo-btn text-red-400 hover:text-red-600" title="מחק"><i class="fa-solid fa-trash"></i></button>
                 `;
+                // Drag and drop logic (only from handle)
+                const handle = item.querySelector('.order-btn');
+                handle.addEventListener('dragstart', function(e) {
+                    item.classList.add('opacity-50');
+                    e.dataTransfer.setData('todoIdx', idx);
+                });
+                handle.addEventListener('dragend', function(e) {
+                    item.classList.remove('opacity-50');
+                });
+                item.addEventListener('dragend', function(e) {
+                    item.classList.remove('opacity-50');
+                });
+                item.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    item.classList.add('ring-2','ring-blue-400');
+                });
+                item.addEventListener('dragleave', function(e) {
+                    item.classList.remove('ring-2','ring-blue-400');
+                });
+                item.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    item.classList.remove('ring-2','ring-blue-400');
+                    const fromIdx = parseInt(e.dataTransfer.getData('todoIdx'));
+                    const toIdx = idx;
+                    if (fromIdx !== toIdx) {
+                        const moved = todos.splice(fromIdx, 1)[0];
+                        todos.splice(toIdx, 0, moved);
+                        saveTripToStorageDebounced();
+                        renderTodos();
+                    }
+                });
                 // Toggle done
                 item.querySelector('.toggle-todo-btn').onclick = function() {
                     todos[idx].done = !todos[idx].done;
