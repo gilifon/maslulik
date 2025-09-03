@@ -925,7 +925,7 @@
             const commentBtnClass = (attr.comments && attr.comments.trim()) ? 'text-green-300' : 'text-gray-400';
             const enabled = attr.enabled !== false; // default true
                 attrDiv.innerHTML = `
-                <button class="px-1 py-1 text-blue-400 hover:text-blue-600 order-btn" title="שנה סדר" draggable="true"><i class="fa-solid fa-bars"></i></button>
+                <button class="cursor-move px-1 py-1 text-blue-400 hover:text-blue-600 order-btn" title="שנה סדר" draggable="true"><i class="fa-solid fa-bars"></i></button>
                 <button class="px-1 py-1 ml-1 ${commentBtnClass} hover:text-gray-200 comment-toggle-btn" title="הערות" style="font-size:1.2em;">${isExpanded ? '<i class=\"fa-solid fa-chevron-up\"></i>' : '<i class=\"fa-solid fa-comments\"></i>'}</button>
                 <button class="ml-1 toggle-attraction-btn ${enabled ? 'text-green-500' : 'text-gray-300'} rounded px-1 py-1" title="${enabled ? 'מוצג במפה' : 'מוסתר מהמפה'}">${enabled ? '<i class=\"fa-solid fa-toggle-on\"></i>' : '<i class=\"fa-solid fa-toggle-off\"></i>'}</button>
                 <input class="input w-32 px-2 py-1 rounded border time-input" type="text" data-day="${dayIdx}" data-attr="${attrIdx}" value="${attr.time || ''}" placeholder="hh:mm">
