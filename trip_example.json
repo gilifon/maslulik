@@ -1,0 +1,460 @@
+{
+    "name": "היער השחור 2025",
+    "description": "טיול משפחתי לגרמניה - היער השחור + פארק אירופה - ספטמבר 2025",
+    "days": [
+        {
+            "day": 1,
+            "dow": "שלישי",
+            "color": "#ff0000",
+            "attractions": [
+                {
+                    "name": "נוחתים בשדה תעופה",
+                    "coordinates": [
+                        47.5983,
+                        7.5349
+                    ],
+                    "url": "",
+                    "time": "14:00",
+                    "comments": "לשכור רכב 400$",
+                    "enabled": true
+                },
+                {
+                    "name": "חניה - טיול רגלי בבאזל",
+                    "coordinates": [
+                        47.5593,
+                        7.5867
+                    ],
+                    "url": "https://maps.app.goo.gl/TiVTrNHGM7aSSSks8",
+                    "time": "15:30",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "Basel Town Hall",
+                    "coordinates": [
+                        47.5582,
+                        7.588
+                    ],
+                    "url": "",
+                    "time": "16:00",
+                    "comments": "",
+                    "enabled": false
+                },
+                {
+                    "name": "Basler Münster",
+                    "coordinates": [
+                        47.5562,
+                        7.5918
+                    ],
+                    "url": "",
+                    "time": "16:30",
+                    "comments": "",
+                    "enabled": false
+                },
+                {
+                    "name": "מזרקת Tinguely",
+                    "coordinates": [
+                        47.5536,
+                        7.5908
+                    ],
+                    "url": "",
+                    "time": "17:00",
+                    "comments": "",
+                    "enabled": false
+                },
+                {
+                    "name": "ארוחת ערב Fish and More",
+                    "coordinates": [
+                        47.5507,
+                        7.587
+                    ],
+                    "url": "https://www.instagram.com/fishandmore_basel/",
+                    "time": "18:00",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "מלון IMPULSIVE",
+                    "coordinates": [
+                        47.6318,
+                        7.6791
+                    ],
+                    "url": "https://neo.cultbooking.com/CPC/?agentcode=58078&hotelcode=11854&lang=de&token=LQmyCMQsI3OEIrw6sDtUH8qq",
+                    "time": "20:00",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "למצוא מטמון",
+                    "coordinates": [
+                        47.6322,
+                        7.6786
+                    ],
+                    "url": "https://www.geocaching.com/geocache/GC9DMTC",
+                    "time": "21:30",
+                    "comments": "",
+                    "enabled": true
+                }
+            ]
+        },
+        {
+            "day": 2,
+            "dow": "רביעי",
+            "color": "#ff8800",
+            "attractions": [
+                {
+                    "name": "פארק הקופים והנשרים",
+                    "coordinates": [
+                        47.6857,
+                        7.7573
+                    ],
+                    "url": "https://www.vogelpark-steinen.de/home-page.html",
+                    "time": "10:00",
+                    "comments": "כלול בכרטיס השחור\n11:00 - מופע נשרים\n12:00 - האכלה של קופים\n13:00 - ארוחת צהריים",
+                    "enabled": true,
+                    "_commentsExpanded": false
+                },
+                {
+                    "name": "רכבל Schauinslandbahn ",
+                    "coordinates": [
+                        47.9361,
+                        7.8656
+                    ],
+                    "url": "https://www.schauinslandbahn.de/en",
+                    "time": "17:00",
+                    "comments": "כלול בכרטיס השחור",
+                    "enabled": true,
+                    "_commentsExpanded": false
+                },
+                {
+                    "name": "הליכה ל Schauinsland",
+                    "coordinates": [
+                        47.9119,
+                        7.8985
+                    ],
+                    "url": "",
+                    "time": "17:30",
+                    "comments": "",
+                    "enabled": false
+                },
+                {
+                    "name": "סיור בפרייבורג",
+                    "coordinates": [
+                        47.9956,
+                        7.8529
+                    ],
+                    "url": "",
+                    "time": "19:00",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "ארוחת ערב Breisgauer Flammkuchen",
+                    "coordinates": [
+                        47.9971,
+                        7.8495
+                    ],
+                    "time": "20:00",
+                    "comments": ""
+                },
+                {
+                    "name": "Hotel Classic",
+                    "coordinates": [
+                        48.0302,
+                        7.8634
+                    ],
+                    "url": "https://www.booking.com/hotel/de/classic.html?label=gen173nr-10CAEoggI46AdIM1gEaGqIAQGYATO4ARfIAQzYAQPoAQH4AQGIAgGoAgG4Ao3OzMUGwAIB0gIkMmUwNzIxMmItNjUxMy00ZmJkLWJhNWEtYzUxMDIyNGUyNzA52AIB4AIB&aid=304142&ucfs=1&checkin=2025-09-17&checkout=2025-09-18&dest_id=-1771505&dest_type=city&group_adults=2&no_rooms=1&group_children=2&age=9&req_age=9&age=14&req_age=14&nflt=oos%3D1%3Breview_score%3D80%3Bht_id%3D204%3Bht_id%3D1100%3Bfc%3D2&srpvid=38a474155c69059a&srepoch=1756571513&matching_block_id=6281905_168138220_4_2_0_630916&atlas_src=sr_iw_title",
+                    "time": "21:00",
+                    "comments": "",
+                    "enabled": false
+                },
+                {
+                    "name": "City Hotel Freiburg",
+                    "coordinates": [
+                        47.9976,
+                        7.8516
+                    ],
+                    "url": "https://www.booking.com/hotel/de/city-freiburg.html?label=gen173nr-10CAEoggI46AdIM1gEaGqIAQGYATO4ARfIAQzYAQPoAQH4AQGIAgGoAgG4Ao3OzMUGwAIB0gIkMmUwNzIxMmItNjUxMy00ZmJkLWJhNWEtYzUxMDIyNGUyNzA52AIB4AIB&aid=304142&ucfs=1&checkin=2025-09-17&checkout=2025-09-18&dest_id=-1771505&dest_type=city&group_adults=2&no_rooms=1&group_children=2&age=9&req_age=9&age=14&req_age=14&nflt=oos%3D1%3Breview_score%3D80%3Bht_id%3D204%3Bht_id%3D1100%3Bfc%3D2&srpvid=38a474155c69059a&srepoch=1756577564&matching_block_id=6409505_139719841_3_1_6047313952768&atlas_src=sr_iw_title",
+                    "time": "21:00",
+                    "comments": "",
+                    "enabled": false
+                }
+            ]
+        },
+        {
+            "day": 3,
+            "dow": "חמישי",
+            "color": "#ffea00",
+            "attractions": [
+                {
+                    "name": "פארק אירופה",
+                    "coordinates": [
+                        48.2661,
+                        7.7223
+                    ],
+                    "url": "https://reservations.europapark.de/",
+                    "time": "09:00",
+                    "comments": "כלול בכרטיס השחור \\ רכישה עם מהמלון",
+                    "enabled": true,
+                    "_commentsExpanded": false
+                },
+                {
+                    "name": "מלון Tipi Town",
+                    "coordinates": [
+                        48.267,
+                        7.723
+                    ],
+                    "url": "https://reservations.europapark.de/",
+                    "time": "21:30",
+                    "comments": "מלון Tipi Town בתוך הפארק €443.50",
+                    "enabled": true,
+                    "_commentsExpanded": false
+                }
+            ]
+        },
+        {
+            "day": 4,
+            "dow": "שישי",
+            "color": "#2bff00",
+            "attractions": [
+                {
+                    "name": "טיול נחל",
+                    "coordinates": [
+                        47.9148,
+                        8.076
+                    ],
+                    "url": "",
+                    "time": "09:00",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "רכבל פלדברג",
+                    "coordinates": [
+                        47.8287,
+                        7.9483
+                    ],
+                    "url": "",
+                    "time": "11:00",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "מגלשות טודנאו",
+                    "coordinates": [
+                        47.8287,
+                        7.9483
+                    ],
+                    "url": "",
+                    "time": "12:00",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "מסעדה צהריים",
+                    "coordinates": [
+                        47.8315,
+                        7.9552
+                    ],
+                    "url": "",
+                    "time": "13:00",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "גשר טודנאו",
+                    "coordinates": [
+                        47.8442,
+                        7.937
+                    ],
+                    "url": "",
+                    "time": "14:30",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "מלון",
+                    "coordinates": [
+                        47.8704,
+                        8.0913
+                    ],
+                    "url": "",
+                    "time": "21:00",
+                    "comments": "",
+                    "enabled": true
+                }
+            ]
+        },
+        {
+            "day": 5,
+            "dow": "שבת",
+            "color": "#00ffee",
+            "attractions": [
+                {
+                    "name": "מפלי טרייברג",
+                    "coordinates": [
+                        48.1302,
+                        8.2306
+                    ],
+                    "url": "",
+                    "time": "09:00",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "לייזר טאג",
+                    "coordinates": [
+                        47.9038,
+                        8.1545
+                    ],
+                    "url": "",
+                    "time": "12:00",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "שייט",
+                    "coordinates": [
+                        47.8993,
+                        8.1536
+                    ],
+                    "url": "",
+                    "time": "14:00",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "שייט",
+                    "coordinates": [
+                        47.8986,
+                        8.1539
+                    ],
+                    "url": "",
+                    "time": "15:00",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "מלון",
+                    "coordinates": [
+                        47.8704,
+                        8.0913
+                    ],
+                    "url": "",
+                    "time": "21:00",
+                    "comments": "",
+                    "enabled": true
+                }
+            ]
+        },
+        {
+            "day": 6,
+            "dow": "ראשון",
+            "color": "#0033ff",
+            "attractions": [
+                {
+                    "name": "פארק חבלים",
+                    "coordinates": [
+                        48.6569,
+                        8.242
+                    ],
+                    "url": "https://www.mehliskopf.de/",
+                    "time": "09:00",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "פארק אומגה",
+                    "coordinates": [
+                        48.7847,
+                        8.6512
+                    ],
+                    "url": "https://www.schwarzwald-tourismus.info/attraktionen/parkplatz-kurhaus-schoemberg-0ad5ce874b",
+                    "time": "13:00",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "מסעדה צהריים",
+                    "coordinates": [
+                        48.7856,
+                        8.6495
+                    ],
+                    "url": "https://www.schwarzwald-tourismus.info/attraktionen/p1-parkplatz-kurhaus-schoemberg-0ad5ce874b",
+                    "time": "14:00",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "מלון",
+                    "coordinates": [
+                        47.8704,
+                        8.0913
+                    ],
+                    "url": "",
+                    "time": "21:00",
+                    "comments": "",
+                    "enabled": true
+                }
+            ]
+        },
+        {
+            "day": 7,
+            "dow": "שני",
+            "color": "#8c00ff",
+            "attractions": [
+                {
+                    "name": "גן החיות של באזל",
+                    "coordinates": [
+                        47.5497,
+                        7.5828
+                    ],
+                    "url": "https://www.zoobasel.ch/de/",
+                    "time": "09:00",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "טיול בעיר",
+                    "coordinates": [
+                        47.5599,
+                        7.5915
+                    ],
+                    "url": "",
+                    "time": "16:00",
+                    "comments": "",
+                    "enabled": true
+                }
+            ]
+        },
+        {
+            "day": 8,
+            "dow": "שלישי",
+            "color": "#ff007b",
+            "attractions": [
+                {
+                    "name": "בית קפה בעיר",
+                    "coordinates": [
+                        47.5599,
+                        7.5915
+                    ],
+                    "url": "",
+                    "time": "09:00",
+                    "comments": "",
+                    "enabled": true
+                },
+                {
+                    "name": "שדה תעופה",
+                    "coordinates": [
+                        47.5983,
+                        7.5349
+                    ],
+                    "url": "",
+                    "time": "11:30",
+                    "comments": "",
+                    "enabled": true
+                }
+            ]
+        }
+    ]
+}
