@@ -1366,7 +1366,7 @@
                 item.className = 'flex items-center justify-between p-2 bg-gray-700 rounded';
                 item.innerHTML = `
                     <div class="flex flex-col text-right">
-                        <strong><i class="fa-solid fa-ellipsis-vertical ml-2"></i>${name} (${(store[name] && store[name].days ? store[name].days.length : 0)} ימים)</strong>
+                        <strong><i class="fa-solid fa-ellipsis-vertical ml-2"></i>${name} (${(store[name] && store[name].days ? store[name].days[0].date : '')}, ${(store[name] && store[name].days ? store[name].days.length : 0)} ימים)</strong>
                         <small class="text-gray-400">${(store[name] && store[name].description ? store[name].description : "")}</small>
                         
                     </div>
