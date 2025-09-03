@@ -103,7 +103,7 @@
                 <!-- Editor container (hidden by default) -->
                 <section id="editorContainer" class="hidden">
                     <!-- Editor top bar (file loader lives here) -->
-                    <div class="flex items-center gap-4 bg-gray-600 text-gray-200 rounded-lg p-2 mt-16">
+                    <div class="flex items-center gap-4 bg-gray-600 text-gray-200 rounded-lg p-2 mt-16 sticky top-17 z-20 w-full">
                         <button id="fileLoaderBtn" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center">
                             <i class="fa-solid fa-folder-open ml-2"></i>יבוא מסלול
                         </button>
@@ -139,8 +139,8 @@
                         <div id="editor" class="space-y-6"></div>
                     </main>
                     <!-- Editor footer (fixed to viewport bottom) -->
-                    <footer id="editorFooter" class="w-full bg-gray-800 shadow p-4 flex items-center justify-center fixed bottom-0 left-0 z-10">
-                        <button id="addDayFooterBtn" class="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 flex items-center gap-2">
+                    <footer id="editorFooter" class="w-full bg-gray-800 shadow p-2 flex items-center justify-center fixed bottom-0 left-0 z-10">
+                        <button id="addDayFooterBtn" class="px-2 py-1 bg-green-700 text-white rounded hover:bg-green-800 flex items-center gap-1">
                             <i class="fa-solid fa-plus"></i> הוסף יום
                         </button>
                     </footer>
