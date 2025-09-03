@@ -1350,7 +1350,16 @@
         function renderSavedTripsList() {
             const store = loadSavedTripsFromStorage();
             savedTripsList.innerHTML = '';
-            const keys = Object.keys(store).sort((a,b) => a.localeCompare(b));
+            // Sort by starting date (day 0's date), earliest first; fallback to name
+            const keys = Object.keys(store).sort((a, b) => {
+                const ta = store[a], tb = store[b];
+                const da = ta && ta.days && ta.days[0] && ta.days[0].date ? new Date(ta.days[0].date) : null;
+                const db = tb && tb.days && tb.days[0] && tb.days[0].date ? new Date(tb.days[0].date) : null;
+                if (da && db && !isNaN(da) && !isNaN(db)) return da - db;
+                if (da && !isNaN(da)) return -1;
+                if (db && !isNaN(db)) return 1;
+                return a.localeCompare(b);
+            });
             if (!keys.length) { savedTripsList.innerHTML = '<div class="text-gray-300">אין מסלולים שמורים</div>'; return; }
             keys.forEach(name => {
                 const item = document.createElement('div'); 
