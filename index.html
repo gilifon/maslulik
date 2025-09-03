@@ -619,7 +619,7 @@
         const todoDiv = document.createElement('div');
         todoDiv.className = 'bg-gray-900 rounded-lg p-3 shadow w-full border border-gray-600 text-gray-800 text-right';
         todoDiv.innerHTML = `
-            <div class="flex items-center justify-between mb-2">
+            <div class="todoListHeader flex items-center justify-between mb-2">
                 <h2 class="text-lg font-bold text-gray-200 flex items-center gap-2"><i class="fa-solid fa-list-check"></i>משימות <span id="todoOpenCount" class="text-sm text-gray-400">(0)</span></h2>
                 <button id="collapseTodosBtn" class="text-gray-300 hover:text-orange-400 text-lg" title="הסתר/הצג"><i class="fa-solid ${tripObj.todosCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'}"></i></button>
             </div>
@@ -631,7 +631,7 @@
         `;
         container.appendChild(todoDiv);
         // Collapse/expand button logic
-        todoDiv.querySelector('#collapseTodosBtn').onclick = function() {
+        todoDiv.querySelector('.todoListHeader').onclick = function() {
             tripObj.todosCollapsed = !tripObj.todosCollapsed;
             saveTripToStorageDebounced();
             // Toggle UI
