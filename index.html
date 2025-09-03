@@ -296,6 +296,12 @@
                 const dayObj = {};
                 dayObj.day = Number.isFinite(d.day) ? d.day : (sanitized.length + 1);
                 dayObj.dow = typeof d.dow === 'string' ? d.dow : '';
+                // restore explicit ISO date string if present in persisted data
+                if (typeof d.date === 'string' && d.date.trim()) {
+                    dayObj.date = d.date;
+                } else if (Number.isFinite(d.date)) {
+                    try { dayObj.date = new Date(d.date).toISOString().slice(0,10); } catch (e) { /* ignore */ }
+                }
                 dayObj.color = typeof d.color === 'string' ? d.color : undefined;
                 dayObj.attractions = [];
                 if (Array.isArray(d.attractions)) {
@@ -608,7 +614,7 @@
         const days = getDays();
         if (!days) setDays([]);
         const _days = getDays();
-        _days.forEach((dayObj, dayIdx) => {
+    _days.forEach((dayObj, dayIdx) => {
             if (!dayObj.color) dayObj.color = dayColors[dayIdx % dayColors.length];
             const dayDiv = document.createElement('div');
             dayDiv.className = 'bg-gray-900 rounded-lg p-3 shadow w-full border border-gray-600 text-gray-800';
@@ -662,9 +668,8 @@
                     <div class="flex items-center gap-2 mb-2 cursor-move bg-gray-700 text-white rounded px-2 py-1 day-header" draggable="true">
                         <span class="text-lg font-bold">יום ${dayObj.day}</span>
                         <input type="color" class="w-8 h-8 rounded" value="${dayObj.color || '#ff0000'}" onchange="editDayField(${dayIdx},'color',this.value)">
-                        <select class="input w-24 px-2 py-1 rounded border bg-white text-black" onchange="editDayField(${dayIdx},'dow',this.value)">
-                            ${hebrewDays.map(d => `<option value='${d}'${d === dayObj.dow ? ' selected' : ''}>${d}</option>`).join('')}
-                        </select>
+                        <input class="input w-40 px-2 py-1 rounded border bg-white text-black date-input" type="text" data-day="${dayIdx}" data-iso="${dayObj.date || ''}" value="${(dayObj.date ? (dayObj.dow ? dayObj.dow + ', ' + dayObj.date : dayObj.date) : (dayObj.dow || ''))}" placeholder="בחר תאריך" />
+                        <span class="text-sm text-gray-200 mr-3" title="יום בשבוע">${dayObj.dow ? dayObj.dow : ''}</span>
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
                         <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות" onclick="pasteAttractionToDay(${dayIdx})"><i class="fa-solid fa-paste"></i></button>
                     </div>
@@ -674,12 +679,30 @@
                     </div>
                 `;
             } else {
-                if (_days[0] && _days[0].dow) { let firstIdx = hebrewDays.indexOf(_days[0].dow); dayObj.dow = hebrewDays[(firstIdx + dayIdx) % hebrewDays.length]; } else { dayObj.dow = hebrewDays[dayIdx % hebrewDays.length]; }
+                // Prefer deriving from day 0's date if present; otherwise fall back to dow rotation
+                if (_days[0] && _days[0].date) {
+                    try {
+                        const base = new Date(_days[0].date);
+                        if (!isNaN(base)) {
+                            const d2 = new Date(base);
+                            d2.setDate(base.getDate() + dayIdx);
+                            dayObj.date = d2.toISOString().slice(0,10);
+                            dayObj.dow = hebrewDays[d2.getDay()];
+                        } else {
+                            // fallback
+                            let firstIdx = hebrewDays.indexOf(_days[0].dow);
+                            dayObj.dow = hebrewDays[(firstIdx + dayIdx) % hebrewDays.length];
+                        }
+                    } catch (e) {
+                        let firstIdx = hebrewDays.indexOf(_days[0].dow);
+                        dayObj.dow = hebrewDays[(firstIdx + dayIdx) % hebrewDays.length];
+                    }
+                } else if (_days[0] && _days[0].dow) { let firstIdx = hebrewDays.indexOf(_days[0].dow); dayObj.dow = hebrewDays[(firstIdx + dayIdx) % hebrewDays.length]; } else { dayObj.dow = hebrewDays[dayIdx % hebrewDays.length]; }
                 dayDiv.innerHTML = `
                     <div class="flex items-center gap-2 mb-2 cursor-move bg-gray-700 text-white rounded px-2 py-1 day-header" draggable="true">
                         <span class="text-lg font-bold">יום ${dayObj.day}</span>
                         <input type="color" class="w-8 h-8 rounded" value="${dayObj.color || '#ff0000'}" onchange="editDayField(${dayIdx},'color',this.value)">
-                        <span class="text-lg font-bold">(${dayObj.dow})</span>
+                        <span class="text-lg font-bold">(${dayObj.dow}, ${dayObj.date})</span>
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
                         <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות" onclick="pasteAttractionToDay(${dayIdx})"><i class="fa-solid fa-paste"></i></button>
                     </div>
@@ -693,6 +716,8 @@
             renderAttractions(dayObj.attractions, dayIdx);
         });
     // previously there was an inline "הוסף יום" button appended here; moved to persistent footer (#addDayFooterBtn)
+    // initialize datepickers for any date inputs we added
+    try { initDatePickers(); } catch (e) {}
     }
 
     function renderAttractions(attractions, dayIdx) {
@@ -823,6 +848,8 @@
         });
     // initialize custom time pickers after DOM insertion
     try { initTimePickers(); } catch (e) {}
+    // initialize datepickers (in case any were added inside day header)
+    try { initDatePickers(); } catch (e) {}
     }
 
     // Editor utilities and CRUD
@@ -890,7 +917,101 @@
             });
         });
     }
-    window.editDayField = function(dayIdx, field, value) { const days = getDays(); days[dayIdx][field] = value; setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
+    // Initialize flatpickr date pickers for day header date inputs
+    function initDatePickers() {
+        if (typeof flatpickr !== 'function') return; // not loaded
+        const inputs = document.querySelectorAll('.date-input');
+        inputs.forEach(inp => {
+            if (inp._fp) return; // already initialized
+            // try to read an ISO date stored on the element so we can pass a defaultDate to flatpickr
+            const iso = inp.getAttribute('data-iso') || '';
+            flatpickr(inp, {
+                dateFormat: 'Y-m-d',
+                allowInput: true,
+                defaultDate: iso || null,
+                onChange: function(selectedDates, dateStr) {
+                    const dayIdx = Number(inp.getAttribute('data-day'));
+                    if (!Number.isFinite(dayIdx)) return;
+                    // update model (this will trigger a re-render)
+                    editDayField(dayIdx, 'date', dateStr || '');
+                    // compute Hebrew weekday for display when possible
+                    let display = dateStr || '';
+                    if (selectedDates && selectedDates[0]) {
+                        const d = selectedDates[0];
+                        const hebrewDays = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+                        display = hebrewDays[d.getDay()] + ' ' + dateStr;
+                    }
+                    // show combined dow + ISO in the visible input
+                    try { inp.value = display; } catch (e) {}
+                    // keep data-iso attribute in sync
+                    try { inp.setAttribute('data-iso', dateStr || ''); } catch (e) {}
+                },
+                onReady: function(selectedDates, dateStr) {
+                    // when flatpickr is ready, if we have an ISO date, ensure the visible value shows dow + date
+                    const isoReady = inp.getAttribute('data-iso') || '';
+                    if (isoReady) {
+                        try {
+                            const d = new Date(isoReady);
+                            if (!isNaN(d)) {
+                                const hebrewDays = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+                                inp.value = hebrewDays[d.getDay()] + ' ' + isoReady;
+                            }
+                        } catch (e) {}
+                    }
+                }
+            });
+        });
+    }
+    window.editDayField = function(dayIdx, field, value) {
+        const days = getDays(); if (!Array.isArray(days)) return;
+        const hebrewDays = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+        // ensure target day exists
+        if (!days[dayIdx]) return;
+        if (field === 'date') {
+            // normalize date to ISO YYYY-MM-DD when possible
+            let parsed = null;
+            if (value && typeof value === 'string' && value.trim()) {
+                // let Date parse ISO-like strings
+                const d = new Date(value);
+                if (!isNaN(d)) parsed = d;
+            }
+            if (parsed) {
+                const iso = parsed.toISOString().slice(0,10);
+                days[dayIdx].date = iso;
+                // set dow according to JS weekday (0=Sun=>"ראשון")
+                days[dayIdx].dow = hebrewDays[parsed.getDay()];
+                // if first day changed, propagate sequential dates/dow to following days
+                if (dayIdx === 0) {
+                    for (let i = 1; i < days.length; i++) {
+                        const d2 = new Date(parsed);
+                        d2.setDate(parsed.getDate() + i);
+                        days[i].date = d2.toISOString().slice(0,10);
+                        days[i].dow = hebrewDays[d2.getDay()];
+                    }
+                }
+            } else {
+                // fallback: store raw string in dow field and date as raw
+                days[dayIdx].date = value;
+                days[dayIdx].dow = value;
+            }
+        } else if (field === 'dow') {
+            // if user typed a dow for the first day, propagate weekdays forward
+            const idx = hebrewDays.indexOf(value);
+            if (idx >= 0 && dayIdx === 0) {
+                for (let i = 0; i < days.length; i++) {
+                    days[i].dow = hebrewDays[(idx + i) % hebrewDays.length];
+                }
+            } else {
+                days[dayIdx].dow = value;
+            }
+        } else {
+            days[dayIdx][field] = value;
+        }
+        setDays(days);
+        renderEditor();
+        refreshMapDebounced();
+        saveTripToStorageDebounced();
+    }
 
     // Save/download
     document.addEventListener('click', function(e) { if (e.target && e.target.id === 'saveBtn') {
