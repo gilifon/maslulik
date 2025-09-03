@@ -446,13 +446,7 @@
     function estimateTripDriveTimeMinutes(days) {
         if (!Array.isArray(days) || days.length === 0) return 0;
         const avgKph = 50; // fallback average speed
-        // local haversine helper (km)
-        function haversineKm(lat1, lng1, lat2, lng2) {
-            const toRad = x => x * Math.PI / 180; const R = 6371;
-            const dLat = toRad(lat2 - lat1); const dLng = toRad(lng2 - lng1);
-            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)*Math.sin(dLng/2);
-            const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); return R*c;
-        }
+        
         let minutes = 0;
         for (let i = 0; i < days.length; i++) {
             const at = days[i].attractions || [];
@@ -497,11 +491,25 @@
     function updateTripEstDriveLabel() {
         try {
             const el = document.getElementById('tripEstDrive');
-            if (!el) return;
+            if (!el) { el.textContent = `משך נהיגה: 0 שעות`; return; }
             const mins = estimateTripDriveTimeMinutes(getDays());
-            if (!mins) { el.textContent = ''; return; }
+            if (!mins) { el.textContent = `משך נהיגה: 0 שעות`; return; }
             const h = Math.floor(mins / 60); const m = mins % 60;
             el.textContent = `משך נהיגה: ${h} שעות ו ${m} דקות`;
+        } catch (e) {}
+    }
+
+    function updateAllDayDriveLabels() {
+        try {
+            const days = getDays(); if (!Array.isArray(days)) { el.textContent = `משך נהיגה: 0 שעות`; return; };
+            days.forEach((d, idx) => {
+                const el = document.getElementById('dayDrive-' + idx);
+                if (!el) { el.textContent = `משך נהיגה: 0 שעות`; return; }
+                const mins = estimateDayDriveMinutes(d);
+                if (!mins) { el.textContent = `משך נהיגה: 0 שעות`; return; }
+                const h = Math.floor(mins/60), m = mins % 60;
+                el.textContent = `משך נהיגה: ${h} שעות ו ${m} דקות`;
+            });
         } catch (e) {}
     }
 
@@ -544,20 +552,6 @@
             }
         }
         return mins;
-    }
-
-    function updateAllDayDriveLabels() {
-        try {
-            const days = getDays(); if (!Array.isArray(days)) return;
-            days.forEach((d, idx) => {
-                const el = document.getElementById('dayDrive-' + idx);
-                if (!el) return;
-                const mins = estimateDayDriveMinutes(d);
-                if (!mins) { el.textContent = ''; return; }
-                const h = Math.floor(mins/60), m = mins % 60;
-                el.textContent = `כ-${h}ש ${m}דק`;
-            });
-        } catch (e) {}
     }
 
     // Map plotting logic (adapted from loadPlaces in original index.html)
@@ -928,7 +922,7 @@
                         <input class="input w-40 px-2 py-1 rounded border bg-white text-black date-input" type="text" data-day="${dayIdx}" data-iso="${dayObj.date || ''}" value="${(dayObj.date ? (dayObj.dow ? dayObj.dow + ', ' + dayObj.date : dayObj.date) : (dayObj.dow || ''))}" placeholder="בחר תאריך" />
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
                         <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות" onclick="pasteAttractionToDay(${dayIdx})"><i class="fa-solid fa-paste"></i></button>
-                        <span id="dayDrive-${dayIdx}" class="text-sm text-gray-300 mr-2" title="זמן נסיעה משוער ביום"></span>
+                        <span id="dayDrive-${dayIdx}" class="flex bg-gray-300 text-black rounded mr-4 items-center px-2 py-1 border" title="זמן נהיגה משוער"></span>
                     </div>
                     <div class="space-y-2" id="attractions-${dayIdx}"></div>
                     <div class="flex gap-2 mt-2">
@@ -960,9 +954,9 @@
                         <span class="text-lg font-bold">יום ${dayObj.day}</span>
                         <input type="color" class="w-8 h-8 rounded" value="${dayObj.color || '#ff0000'}" onchange="editDayField(${dayIdx},'color',this.value)">
                         <span class="text-lg font-bold">(${dayObj.dow}, ${dayObj.date})</span>
-                        <span id="dayDrive-${dayIdx}" class="text-sm text-gray-300 mr-2" title="זמן נסיעה משוער ביום"></span>
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
                         <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות" onclick="pasteAttractionToDay(${dayIdx})"><i class="fa-solid fa-paste"></i></button>
+                        <span id="dayDrive-${dayIdx}" class="flex bg-gray-300 text-black rounded mr-4 items-center px-2 py-1 border" title="זמן נהיגה משוער"></span>
                     </div>
                     <div class="space-y-2" id="attractions-${dayIdx}"></div>
                     <div class="flex gap-2 mt-2">
