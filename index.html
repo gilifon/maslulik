@@ -157,8 +157,10 @@
 
     // Helpers to access days array in the trip object
     function ensureTrip() {
-        if (!trip || typeof trip !== 'object') trip = { name: '', description: '', days: [] };
+        if (!trip || typeof trip !== 'object') trip = { name: '', description: '', days: [], todos: [], todosCollapsed: false };
         if (!Array.isArray(trip.days)) trip.days = [];
+        if (!Array.isArray(trip.todos)) trip.todos = [];
+        if (typeof trip.todosCollapsed !== 'boolean') trip.todosCollapsed = false;
         return trip;
     }
     function getDays() { ensureTrip(); return trip.days; }
@@ -329,11 +331,13 @@
                 sanitized.push(dayObj);
             }
             if (!sanitized.length) return null;
-            // Build trip object. If parsed was already an object, preserve its name/description if present.
+            // Build trip object. If parsed was already an object, preserve its name/description/todos if present.
             const tripObj = {
                 name: (parsed && typeof parsed === 'object' && typeof parsed.name === 'string') ? parsed.name : '',
                 description: (parsed && typeof parsed === 'object' && typeof parsed.description === 'string') ? parsed.description : '',
-                days: sanitized
+                days: sanitized,
+                todos: (parsed && typeof parsed === 'object' && Array.isArray(parsed.todos)) ? parsed.todos : [],
+                todosCollapsed: (parsed && typeof parsed === 'object' && typeof parsed.todosCollapsed === 'boolean') ? parsed.todosCollapsed : false
             };
             return tripObj;
         } catch (e) {
@@ -609,7 +613,104 @@
     function renderEditor() {
         const container = document.getElementById('editor');
         container.innerHTML = '';
-        const hebrewDays = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+        // --- Todo List UI ---
+        const tripObj = ensureTrip();
+        const todos = tripObj.todos;
+        const todoDiv = document.createElement('div');
+        todoDiv.className = 'bg-gray-900 rounded-lg p-3 shadow w-full border border-gray-600 text-gray-800 text-right';
+        todoDiv.innerHTML = `
+            <div class="flex items-center justify-between mb-2">
+                <h2 class="text-lg font-bold text-gray-200 flex items-center gap-2"><i class="fa-solid fa-list-check"></i>משימות <span id="todoOpenCount" class="text-sm text-gray-400">(0)</span></h2>
+                <button id="collapseTodosBtn" class="text-gray-300 hover:text-orange-400 text-lg" title="הסתר/הצג"><i class="fa-solid ${tripObj.todosCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'}"></i></button>
+            </div>
+            <div id="todoList" class="space-y-2 mb-2" style="display:${tripObj.todosCollapsed ? 'none' : 'block'}"></div>
+            <div id="todoAddRow" class="flex gap-2 mt-2" style="display:${tripObj.todosCollapsed ? 'none' : 'flex'}">
+                <input id="newTodoInput" class="input w-full px-2 py-1 rounded border bg-gray-800 text-white" type="text" placeholder="הוסף משימה..." />
+                <button id="addTodoBtn" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"><i class="fa-solid fa-plus"></i></button>
+            </div>
+        `;
+        container.appendChild(todoDiv);
+        // Collapse/expand button logic
+        todoDiv.querySelector('#collapseTodosBtn').onclick = function() {
+            tripObj.todosCollapsed = !tripObj.todosCollapsed;
+            saveTripToStorageDebounced();
+            // Toggle UI
+            const todoList = todoDiv.querySelector('#todoList');
+            const addRow = todoDiv.querySelector('#todoAddRow');
+            const icon = todoDiv.querySelector('#collapseTodosBtn i');
+            if (tripObj.todosCollapsed) {
+                todoList.style.display = 'none';
+                addRow.style.display = 'none';
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            } else {
+                todoList.style.display = 'block';
+                addRow.style.display = 'flex';
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            }
+        };
+        // Render todo items
+        function renderTodos() {
+            const list = todoDiv.querySelector('#todoList');
+            list.innerHTML = '';
+            todos.forEach((todo, idx) => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center gap-2 bg-gray-800 rounded px-2 py-1';
+                item.innerHTML = `
+                    <button class="toggle-todo-btn ${todo.done ? 'text-green-400' : 'text-gray-400'}" title="סמן כבוצע"><i class="fa-solid fa-check"></i></button>
+                    <input class="edit-todo-input w-full px-2 py-1 rounded border bg-gray-800 text-white" type="text" value="${todo.text}" />
+                    <button class="delete-todo-btn text-red-400 hover:text-red-600" title="מחק"><i class="fa-solid fa-trash"></i></button>
+                `;
+                // Toggle done
+                item.querySelector('.toggle-todo-btn').onclick = function() {
+                    todos[idx].done = !todos[idx].done;
+                    saveTripToStorageDebounced();
+                    renderTodos();
+                };
+                // Edit text
+                item.querySelector('.edit-todo-input').onchange = function(e) {
+                    todos[idx].text = e.target.value;
+                    saveTripToStorageDebounced();
+                };
+                // Delete
+                item.querySelector('.delete-todo-btn').onclick = function() {
+                    todos.splice(idx, 1);
+                    saveTripToStorageDebounced();
+                    renderTodos();
+                };
+                // Style if done
+                if (todo.done) {
+                    item.querySelector('.edit-todo-input').classList.add('line-through','text-gray-400');
+                }
+                list.appendChild(item);
+            });
+            // update open tasks counter
+            try {
+                const cntEl = todoDiv.querySelector('#todoOpenCount');
+                if (cntEl) {
+                    const open = todos.filter(t => !t.done).length;
+                    cntEl.textContent = '(' + open + ')';
+                }
+            } catch (e) {}
+        }
+        renderTodos();
+        // Add new todo
+        todoDiv.querySelector('#addTodoBtn').onclick = function() {
+            const inp = todoDiv.querySelector('#newTodoInput');
+            const val = inp.value.trim();
+            if (val) {
+                todos.push({ text: val, done: false });
+                inp.value = '';
+                saveTripToStorageDebounced();
+                renderTodos();
+            }
+        };
+        // Enter key adds todo
+        todoDiv.querySelector('#newTodoInput').onkeydown = function(e) {
+            if (e.key === 'Enter') todoDiv.querySelector('#addTodoBtn').click();
+        };
+    const hebrewDays = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
         const dayColors = ['#e53e3e','#3182ce','#f6ad55','#ecc94b','#38b2ac','#d53f8c','#4fd1c5'];
         const days = getDays();
         if (!days) setDays([]);
