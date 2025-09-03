@@ -278,6 +278,7 @@
             setDays(days);
             renderEditor();
             refreshMapDebounced();
+            try { updateAllDayDriveLabels(); updateTripEstDriveLabel(); } catch (e) {}
             saveTripToStorageDebounced(0);
             showToast('הפעילות הודבקה');
         } catch (e) { showToast('שגיאה בהדבקה', true); }
@@ -441,43 +442,56 @@
         }
     }
 
-    // Estimate total driving time for the trip (simple heuristic using haversine and avg speed)
+    // Estimate total driving time for the trip using cached ORS durations when available, falling back to haversine heuristic
     function estimateTripDriveTimeMinutes(days) {
         if (!Array.isArray(days) || days.length === 0) return 0;
-        // average driving speed assumption (km/h)
-        const avgKph = 50; // conservative urban+intercity mix
-        // reuse haversine defined earlier inside loadPlaces; replicate minimal version here
+        const avgKph = 50; // fallback average speed
+        // local haversine helper (km)
         function haversineKm(lat1, lng1, lat2, lng2) {
             const toRad = x => x * Math.PI / 180; const R = 6371;
             const dLat = toRad(lat2 - lat1); const dLng = toRad(lng2 - lng1);
             const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)*Math.sin(dLng/2);
             const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); return R*c;
         }
-        let totalKm = 0;
+        let minutes = 0;
         for (let i = 0; i < days.length; i++) {
             const at = days[i].attractions || [];
-            // within-day: sum consecutive attraction distances
+            // within-day segments
             for (let j = 0; j < at.length - 1; j++) {
                 const a1 = at[j].coordinates, a2 = at[j+1].coordinates;
                 if (!a1 || !a2) continue;
-                const lat1 = Number(a1[0]), lng1 = Number(a1[1]); const lat2 = Number(a2[0]), lng2 = Number(a2[1]);
+                const lat1 = Number(a1[0]), lng1 = Number(a1[1]);
+                const lat2 = Number(a2[0]), lng2 = Number(a2[1]);
                 if (!isFinite(lat1) || !isFinite(lng1) || !isFinite(lat2) || !isFinite(lng2)) continue;
-                totalKm += haversineKm(lat1,lng1,lat2,lng2);
+                const cached = getCachedRouteDurationMinutesFromStorage(lat1,lng1,lat2,lng2);
+                if (cached !== null) {
+                    minutes += cached;
+                } else {
+                    const km = haversineKm(lat1,lng1,lat2,lng2);
+                    minutes += Math.round((km / avgKph) * 60);
+                }
             }
-            // between days: last attraction of this day to first of next day
+            // between-days: last attraction of this day to first of next day
             if (i < days.length - 1) {
                 const last = (at.length ? at[at.length-1] : null);
                 const nextAt = (days[i+1].attractions && days[i+1].attractions.length) ? days[i+1].attractions[0] : null;
                 if (last && nextAt && last.coordinates && nextAt.coordinates) {
                     const lat1 = Number(last.coordinates[0]), lng1 = Number(last.coordinates[1]);
                     const lat2 = Number(nextAt.coordinates[0]), lng2 = Number(nextAt.coordinates[1]);
-                    if (isFinite(lat1) && isFinite(lng1) && isFinite(lat2) && isFinite(lng2)) totalKm += haversineKm(lat1,lng1,lat2,lng2);
+                    if (isFinite(lat1) && isFinite(lng1) && isFinite(lat2) && isFinite(lng2)) {
+                        const cached = getCachedRouteDurationMinutesFromStorage(lat1,lng1,lat2,lng2);
+                        if (cached !== null) {
+                            minutes += cached;
+                        } else {
+                            const km = haversineKm(lat1,lng1,lat2,lng2);
+                            minutes += Math.round((km / avgKph) * 60);
+                        }
+                    }
                 }
             }
         }
-        // convert km -> hours using avgKph, then to minutes, add 10% buffer for stops and routing
-        const hours = totalKm / avgKph; const minutes = Math.round(hours * 60 * 1.1);
-        return minutes;
+        // add 10% buffer for stops/routing inefficiencies
+        return Math.round(minutes * 1.1);
     }
 
     function updateTripEstDriveLabel() {
@@ -488,6 +502,61 @@
             if (!mins) { el.textContent = ''; return; }
             const h = Math.floor(mins / 60); const m = mins % 60;
             el.textContent = `משך נהיגה: ${h} שעות ו ${m} דקות`;
+        } catch (e) {}
+    }
+
+    // Read cached ORS route durations from localStorage-backed route cache if present
+    function getCachedRouteDurationMinutesFromStorage(lat1,lng1,lat2,lng2) {
+        try {
+            const raw = localStorage.getItem(LS_ROUTE_CACHE_KEY);
+            if (!raw) return null;
+            const store = JSON.parse(raw);
+            const key = routeKey(lat1,lng1,lat2,lng2);
+            const entry = store[key];
+            if (!entry || !entry.summary || typeof entry.summary.duration !== 'number') return null;
+            return Math.round(entry.summary.duration / 60);
+        } catch (e) { return null; }
+    }
+
+    function haversineKm(lat1, lng1, lat2, lng2) {
+        const toRad = x => x * Math.PI / 180; const R = 6371;
+        const dLat = toRad(lat2 - lat1); const dLng = toRad(lng2 - lng1);
+        const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)*Math.sin(dLng/2);
+        const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); return R*c;
+    }
+
+    // Estimate driving minutes for a single day using cached ORS durations, fallback to haversine
+    function estimateDayDriveMinutes(dayObj) {
+        if (!dayObj || !Array.isArray(dayObj.attractions) || dayObj.attractions.length < 2) return 0;
+        let mins = 0; const avgKph = 50;
+        for (let i = 0; i < dayObj.attractions.length - 1; i++) {
+            const a1 = dayObj.attractions[i], a2 = dayObj.attractions[i+1];
+            if (!a1 || !a2 || !a1.coordinates || !a2.coordinates) continue;
+            const lat1 = Number(a1.coordinates[0]), lng1 = Number(a1.coordinates[1]);
+            const lat2 = Number(a2.coordinates[0]), lng2 = Number(a2.coordinates[1]);
+            if (!isFinite(lat1) || !isFinite(lng1) || !isFinite(lat2) || !isFinite(lng2)) continue;
+            const cached = getCachedRouteDurationMinutesFromStorage(lat1,lng1,lat2,lng2);
+            if (cached !== null) {
+                mins += cached;
+            } else {
+                const km = haversineKm(lat1,lng1,lat2,lng2);
+                mins += Math.round((km / avgKph) * 60);
+            }
+        }
+        return mins;
+    }
+
+    function updateAllDayDriveLabels() {
+        try {
+            const days = getDays(); if (!Array.isArray(days)) return;
+            days.forEach((d, idx) => {
+                const el = document.getElementById('dayDrive-' + idx);
+                if (!el) return;
+                const mins = estimateDayDriveMinutes(d);
+                if (!mins) { el.textContent = ''; return; }
+                const h = Math.floor(mins/60), m = mins % 60;
+                el.textContent = `כ-${h}ש ${m}דק`;
+            });
         } catch (e) {}
     }
 
@@ -832,6 +901,8 @@
                     const moved = _days[fromIdx].attractions.splice(attrIdx,1)[0];
                     if (!_days[dayIdx].attractions) _days[dayIdx].attractions = [];
                     _days[toIdx].attractions.push(moved);
+                    setDays(_days);
+                    try { updateAllDayDriveLabels(); updateTripEstDriveLabel(); } catch (e) {}
                     renderEditor();
                     refreshMapDebounced();
                     saveTripToStorageDebounced();
@@ -857,6 +928,7 @@
                         <input class="input w-40 px-2 py-1 rounded border bg-white text-black date-input" type="text" data-day="${dayIdx}" data-iso="${dayObj.date || ''}" value="${(dayObj.date ? (dayObj.dow ? dayObj.dow + ', ' + dayObj.date : dayObj.date) : (dayObj.dow || ''))}" placeholder="בחר תאריך" />
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
                         <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות" onclick="pasteAttractionToDay(${dayIdx})"><i class="fa-solid fa-paste"></i></button>
+                        <span id="dayDrive-${dayIdx}" class="text-sm text-gray-300 mr-2" title="זמן נסיעה משוער ביום"></span>
                     </div>
                     <div class="space-y-2" id="attractions-${dayIdx}"></div>
                     <div class="flex gap-2 mt-2">
@@ -888,6 +960,7 @@
                         <span class="text-lg font-bold">יום ${dayObj.day}</span>
                         <input type="color" class="w-8 h-8 rounded" value="${dayObj.color || '#ff0000'}" onchange="editDayField(${dayIdx},'color',this.value)">
                         <span class="text-lg font-bold">(${dayObj.dow}, ${dayObj.date})</span>
+                        <span id="dayDrive-${dayIdx}" class="text-sm text-gray-300 mr-2" title="זמן נסיעה משוער ביום"></span>
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
                         <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות" onclick="pasteAttractionToDay(${dayIdx})"><i class="fa-solid fa-paste"></i></button>
                     </div>
@@ -904,6 +977,7 @@
     // initialize datepickers for any date inputs we added
     try { initDatePickers(); } catch (e) {}
     try { updateTripEstDriveLabel(); } catch (e) {}
+    try { updateAllDayDriveLabels(); } catch (e) {}
     }
 
     function renderAttractions(attractions, dayIdx) {
@@ -955,6 +1029,7 @@
                     //same day, just reorder
                         const days = getDays(); const moved = days[dayIdx].attractions.splice(fromIdx,1)[0]; 
                         days[dayIdx].attractions.splice(toIdx,0,moved); setDays(days);
+                    try { updateAllDayDriveLabels(); updateTripEstDriveLabel(); } catch (e) {}
                     renderEditor(); 
                     refreshMapDebounced(); 
                     saveTripToStorageDebounced(); 
@@ -968,6 +1043,7 @@
                         const days = getDays(); const moved = days[fromDayIdx].attractions.splice(fromIdx,1)[0]; 
                         if (!days[dayIdx].attractions) days[dayIdx].attractions = []; 
                         days[dayIdx].attractions.splice(toIdx+1,0,moved); setDays(days);
+                    try { updateAllDayDriveLabels(); updateTripEstDriveLabel(); } catch (e) {}
                     renderEditor(); 
                     refreshMapDebounced(); 
                     saveTripToStorageDebounced(); 
@@ -1048,7 +1124,7 @@
     function onUrlClick(url) { if (url && typeof url === 'string' && url.trim()) window.open(url, '_blank'); }
     window.addDay = function() { const days = getDays(); const nextDay = days && days.length ? days[days.length-1].day+1 : 1; days.push({day: nextDay, dow:'', attractions:[]}); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
     window.deleteDay = function(dayIdx) { showConfirmModal('למחוק את היום הזה?', function(confirmed) { if (confirmed) { const days = getDays(); days.splice(dayIdx,1); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); } }); }
-    window.addAttraction = function(dayIdx) { const days = getDays(); if (!days[dayIdx].attractions) days[dayIdx].attractions = []; days[dayIdx].attractions.push({name:'',coordinates:[0,0],time:'',comments:''}); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
+    window.addAttraction = function(dayIdx) { const days = getDays(); if (!days[dayIdx].attractions) days[dayIdx].attractions = []; days[dayIdx].attractions.push({name:'',coordinates:[0,0],time:'',comments:''}); setDays(days); try { updateAllDayDriveLabels(); updateTripEstDriveLabel(); } catch(e){} renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
     window.deleteAttraction = function(dayIdx, attrIdx) { showConfirmModal('למחוק את הפעילות?', function(confirmed) { if (confirmed) { const days = getDays(); days[dayIdx].attractions.splice(attrIdx,1); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); } }); }
     window.editAttraction = function(dayIdx, attrIdx, field, value) {
         if (field === 'coordinates') {
@@ -1058,6 +1134,8 @@
                 // Format to 4 decimal places
                 coords = coords.map(n => Number(n.toFixed(4)));
                 const days = getDays(); days[dayIdx].attractions[attrIdx].coordinates = coords; setDays(days);
+                // Recalculate per-day and trip estimates when coordinates change
+                try { updateAllDayDriveLabels(); updateTripEstDriveLabel(); } catch (e) {}
                 // Also update the input field to show formatted value
                 // Find the input element and update its value
                 setTimeout(() => {
@@ -1348,6 +1426,7 @@
             // but populate map overlays (preview)
             init_map();
             loadPlaces(getDays());
+            try { updateAllDayDriveLabels(); updateTripEstDriveLabel(); } catch (e) {}
         }
     function showMap() { editorContainer.classList.add('hidden'); mapContainer.classList.remove('hidden'); if (headerControlsEl) headerControlsEl.classList.remove('hidden'); routingEnabled = true; refreshMapDebounced(200); }
     function showEditor() { mapContainer.classList.add('hidden'); editorContainer.classList.remove('hidden'); if (headerControlsEl) headerControlsEl.classList.add('hidden'); routingEnabled = false; refreshMapDebounced(0); }
@@ -1380,6 +1459,7 @@
                     // clear map overlays and load
                     if (map) { map.eachLayer(function(layer) { if (layer !== baseLayer) map.removeLayer(layer); }); map.setView([20,0],2); }
                     loadPlaces(getDays());
+                    try { updateAllDayDriveLabels(); updateTripEstDriveLabel(); } catch (e) {}
                     showToast('הקובץ נטען בהצלחה!');
                 } catch (err) { showToast('שגיאה בטעינת הקובץ', true); }
             };
@@ -1433,6 +1513,7 @@
                     populateTripInputs(trip);
                     renderEditor(); 
                     loadPlaces(getDays()); 
+                    try { updateAllDayDriveLabels(); updateTripEstDriveLabel(); } catch (e) {}
                     saveTripToStorageDebounced(0); 
                     savedTripsModal.classList.add('hidden'); 
                     showToast('המסלול נטען'); };
