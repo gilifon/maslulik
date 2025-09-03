@@ -112,9 +112,10 @@
                             <div class="flex bg-gray-800 text-gray-300 rounded">
                                 <input id="tripNameInput" type="text" placeholder="שם המסלול" class="input w-48 px-2 py-1 rounded border">
                             </div>
-                            <div class="flex bg-gray-800 text-gray-300 rounded mr-4">
+                            <div class="flex bg-gray-800 text-gray-300 rounded mr-4 items-center">
                                 <input id="tripDescInput" type="text" placeholder="תיאור קצר" class="input w-128 px-2 py-1 rounded border">
                             </div>
+                            <div id="tripEstDrive" class="flex bg-gray-300 text-black rounded mr-4 items-center px-2 py-1 border" title="זמן נהיגה משוער"></div>
                         </div>
                         <input
                             type="file"
@@ -438,6 +439,56 @@
         } catch (e) {
             // ignore malformed cache
         }
+    }
+
+    // Estimate total driving time for the trip (simple heuristic using haversine and avg speed)
+    function estimateTripDriveTimeMinutes(days) {
+        if (!Array.isArray(days) || days.length === 0) return 0;
+        // average driving speed assumption (km/h)
+        const avgKph = 50; // conservative urban+intercity mix
+        // reuse haversine defined earlier inside loadPlaces; replicate minimal version here
+        function haversineKm(lat1, lng1, lat2, lng2) {
+            const toRad = x => x * Math.PI / 180; const R = 6371;
+            const dLat = toRad(lat2 - lat1); const dLng = toRad(lng2 - lng1);
+            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)*Math.sin(dLng/2);
+            const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); return R*c;
+        }
+        let totalKm = 0;
+        for (let i = 0; i < days.length; i++) {
+            const at = days[i].attractions || [];
+            // within-day: sum consecutive attraction distances
+            for (let j = 0; j < at.length - 1; j++) {
+                const a1 = at[j].coordinates, a2 = at[j+1].coordinates;
+                if (!a1 || !a2) continue;
+                const lat1 = Number(a1[0]), lng1 = Number(a1[1]); const lat2 = Number(a2[0]), lng2 = Number(a2[1]);
+                if (!isFinite(lat1) || !isFinite(lng1) || !isFinite(lat2) || !isFinite(lng2)) continue;
+                totalKm += haversineKm(lat1,lng1,lat2,lng2);
+            }
+            // between days: last attraction of this day to first of next day
+            if (i < days.length - 1) {
+                const last = (at.length ? at[at.length-1] : null);
+                const nextAt = (days[i+1].attractions && days[i+1].attractions.length) ? days[i+1].attractions[0] : null;
+                if (last && nextAt && last.coordinates && nextAt.coordinates) {
+                    const lat1 = Number(last.coordinates[0]), lng1 = Number(last.coordinates[1]);
+                    const lat2 = Number(nextAt.coordinates[0]), lng2 = Number(nextAt.coordinates[1]);
+                    if (isFinite(lat1) && isFinite(lng1) && isFinite(lat2) && isFinite(lng2)) totalKm += haversineKm(lat1,lng1,lat2,lng2);
+                }
+            }
+        }
+        // convert km -> hours using avgKph, then to minutes, add 10% buffer for stops and routing
+        const hours = totalKm / avgKph; const minutes = Math.round(hours * 60 * 1.1);
+        return minutes;
+    }
+
+    function updateTripEstDriveLabel() {
+        try {
+            const el = document.getElementById('tripEstDrive');
+            if (!el) return;
+            const mins = estimateTripDriveTimeMinutes(getDays());
+            if (!mins) { el.textContent = ''; return; }
+            const h = Math.floor(mins / 60); const m = mins % 60;
+            el.textContent = `משך נהיגה: ${h} שעות ו ${m} דקות`;
+        } catch (e) {}
     }
 
     // Map plotting logic (adapted from loadPlaces in original index.html)
@@ -852,6 +903,7 @@
     // previously there was an inline "הוסף יום" button appended here; moved to persistent footer (#addDayFooterBtn)
     // initialize datepickers for any date inputs we added
     try { initDatePickers(); } catch (e) {}
+    try { updateTripEstDriveLabel(); } catch (e) {}
     }
 
     function renderAttractions(attractions, dayIdx) {
@@ -1427,6 +1479,7 @@
                     if (tName) tName.value = (tr && tr.name) ? tr.name : '';
                     if (tDesc) tDesc.value = (tr && tr.description) ? tr.description : '';
                 } catch (e) {}
+                try { updateTripEstDriveLabel(); } catch (e) {}
             }
             // simple debounce utility
             function debounce(fn, wait) { let t=null; return function(...args){ if (t) clearTimeout(t); t=setTimeout(()=>{ t=null; fn.apply(this,args); }, wait); }; }
