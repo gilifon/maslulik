@@ -1404,6 +1404,19 @@
 
         if (savedTripsBtn) savedTripsBtn.addEventListener('click', function(){ renderSavedTripsList(); savedTripsModal.classList.remove('hidden'); });
         if (closeSavedTripsBtn) closeSavedTripsBtn.addEventListener('click', function(){ savedTripsModal.classList.add('hidden'); });
+        // close modal when clicking on the overlay (outside the inner dialog)
+        if (savedTripsModal) {
+            savedTripsModal.addEventListener('click', function(e) {
+                if (e.target === savedTripsModal) savedTripsModal.classList.add('hidden');
+            });
+        }
+        // Confirmation modal overlay close
+        const confirmModalEl = document.getElementById('confirmModal');
+        if (confirmModalEl) {
+            confirmModalEl.addEventListener('click', function(e) {
+                if (e.target === confirmModalEl) confirmModalEl.classList.add('hidden');
+            });
+        }
         if (saveToLibraryBtn) saveToLibraryBtn.addEventListener('click', saveTripToList);
 
             // Trip metadata inputs wiring (centralized)
