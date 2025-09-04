@@ -1146,7 +1146,7 @@
         refreshMapDebounced();
         saveTripToStorageDebounced();
     }
-
+    
     // Save/download
     document.addEventListener('click', function(e) { if (e.target && e.target.id === 'saveBtn') {
         const b = ensureTrip(); const blob = new Blob([JSON.stringify(b, null, 4)], {type:'application/json'});
@@ -1226,9 +1226,9 @@
         });
 
         // Compose full HTML
-        const full = `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>מסלוליק - יצוא סטטי</title><style>${css}</style></head><body>${bodyHtml}</body></html>`;
+        const full = `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>מסלוליק - תוכנית טיול</title><style>${css}</style></head><body>${bodyHtml}</body></html>`;
         const blob = new Blob([full], {type:'text/html'});
-        const url2 = URL.createObjectURL(blob); const a2 = document.createElement('a'); a2.href = url2; a2.download = 'trip_static.html'; a2.click(); URL.revokeObjectURL(url2); showToast('הייצוא הושלם!');
+        const url2 = URL.createObjectURL(blob); const a2 = document.createElement('a'); a2.href = url2; a2.download = 'trip_plan.html'; a2.click(); URL.revokeObjectURL(url2); showToast('הייצוא הושלם!');
     }
 
     // Wire export button
