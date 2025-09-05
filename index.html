@@ -298,6 +298,7 @@
                 const dayObj = {};
                 dayObj.day = Number.isFinite(d.day) ? d.day : (sanitized.length + 1);
                 dayObj.dow = typeof d.dow === 'string' ? d.dow : '';
+                dayObj.state = d.state === 'complete' ? 'complete' : 'in-progress';
                 // restore explicit ISO date string if present in persisted data
                 if (typeof d.date === 'string' && d.date.trim()) {
                     dayObj.date = d.date;
@@ -752,8 +753,24 @@
     _days.forEach((dayObj, dayIdx) => {
             if (!dayObj.color) dayObj.color = dayColors[dayIdx % dayColors.length];
             const dayDiv = document.createElement('div');
-            dayDiv.className = 'bg-gray-900 rounded-lg p-3 shadow w-full border border-gray-600 text-gray-800';
+            dayDiv.className = `rounded-lg p-3 shadow w-full border text-white ${dayObj.state === 'complete' ? 'bg-green-900 border-green-300' : 'bg-gray-900 border-gray-600'}`;
             dayDiv.setAttribute('data-day-idx', dayIdx);
+
+            // Add event listener for state toggle after rendering
+            setTimeout(() => {
+                const toggleBtn = dayDiv.querySelector('.toggle-day-state');
+                if (toggleBtn) {
+                    toggleBtn.addEventListener('click', function() {
+                        const days = getDays();
+                        const idx = Number(toggleBtn.getAttribute('data-day-idx'));
+                        if (!days[idx]) return;
+                        days[idx].state = days[idx].state === 'complete' ? 'in-progress' : 'complete';
+                        setDays(days);
+                        renderEditor();
+                        saveTripToStorageDebounced();
+                    });
+                }
+            }, 0);
             // Only allow drag if started from the header (first child)
             dayDiv.addEventListener('dragstart', function(e) {
                 // Only allow drag if started from header (first child)
@@ -806,10 +823,13 @@
                         <input class="input w-40 px-2 py-1 rounded border bg-white text-black date-input" type="text" data-day="${dayIdx}" data-iso="${dayObj.date || ''}" value="${(dayObj.date ? (dayObj.dow ? dayObj.dow + ', ' + dayObj.date : dayObj.date) : (dayObj.dow || ''))}" placeholder="בחר תאריך" />
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
                         <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות" onclick="pasteAttractionToDay(${dayIdx})"><i class="fa-solid fa-paste"></i></button>
+                        <button class="toggle-day-state mr-auto px-2 py-1 rounded ${dayObj.state === 'complete' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}" title="סמן יום כ'הושלם'" data-day-idx="${dayIdx}">
+                            <i class="fa-solid fa-check${dayObj.state === 'complete' ? '' : '-to-slot'}"></i>
+                        </button>
                     </div>
                     <div class="space-y-2" id="attractions-${dayIdx}"></div>
                     <div class="flex gap-2 mt-2">
-                        <button class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700" onclick="addAttraction(${dayIdx})"><i class="fa-solid fa-plus ml-1"></i> הוסף פעילות</button>
+                        <button class="px-3 py-1 border border-black bg-green-600 text-white rounded hover:bg-green-700" onclick="addAttraction(${dayIdx})"><i class="fa-solid fa-plus ml-1"></i> הוסף פעילות</button>
                     </div>
                 `;
             } else {
@@ -839,10 +859,13 @@
                         <span class="text-lg font-bold">(${dayObj.dow}, ${dayObj.date})</span>
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
                         <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות" onclick="pasteAttractionToDay(${dayIdx})"><i class="fa-solid fa-paste"></i></button>
+                        <button class="toggle-day-state mr-auto px-2 py-1 rounded ${dayObj.state === 'complete' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}" title="סמן יום כ'הושלם'" data-day-idx="${dayIdx}">
+                            <i class="fa-solid fa-check${dayObj.state === 'complete' ? '' : '-to-slot'}"></i>
+                        </button>
                     </div>
                     <div class="space-y-2" id="attractions-${dayIdx}"></div>
                     <div class="flex gap-2 mt-2">
-                        <button class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700" onclick="addAttraction(${dayIdx})"><i class="fa-solid fa-plus ml-1"></i> הוסף פעילות</button>
+                        <button class="px-3 py-1 border border-black bg-green-600 text-white rounded hover:bg-green-700" onclick="addAttraction(${dayIdx})"><i class="fa-solid fa-plus ml-1"></i> הוסף פעילות</button>
                     </div>
                 `;
             }
@@ -994,7 +1017,7 @@
             window.open(wazeUrl, '_blank');
         } }
     function onUrlClick(url) { if (url && typeof url === 'string' && url.trim()) window.open(url, '_blank'); }
-    window.addDay = function() { const days = getDays(); const nextDay = days && days.length ? days[days.length-1].day+1 : 1; days.push({day: nextDay, dow:'', attractions:[]}); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
+    window.addDay = function() { const days = getDays(); const nextDay = days && days.length ? days[days.length-1].day+1 : 1; days.push({day: nextDay, dow:'', attractions:[], state:'in-progress'}); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
     window.deleteDay = function(dayIdx) { showConfirmModal('למחוק את היום הזה?', function(confirmed) { if (confirmed) { const days = getDays(); days.splice(dayIdx,1); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); } }); }
     window.addAttraction = function(dayIdx) { const days = getDays(); if (!days[dayIdx].attractions) days[dayIdx].attractions = []; days[dayIdx].attractions.push({name:'',coordinates:[0,0],time:'',comments:''}); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
     window.deleteAttraction = function(dayIdx, attrIdx) { showConfirmModal('למחוק את הפעילות?', function(confirmed) { if (confirmed) { const days = getDays(); days[dayIdx].attractions.splice(attrIdx,1); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); } }); }
@@ -1253,7 +1276,48 @@
     function init_map() {
         if (!map)
         {
-            map = L.map('map').setView([20,0],2); baseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18, attribution:'© OpenStreetMap contributors' }).addTo(map);
+            map = L.map('map').setView([20,0],2);
+            // Default base layer (OSM)
+            window.osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18, attribution:'© OpenStreetMap contributors' });
+            // Satellite layer (ESRI)
+            window.satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 18,
+            });
+            // Layer control (built-in Leaflet)
+            // Load saved map type preference (defaults to 'standard')
+            const LS_MAPTYPE_KEY = 'msl_map_type';
+            let saved = null;
+            try { saved = localStorage.getItem(LS_MAPTYPE_KEY); } catch (e) { saved = null; }
+            // Ensure `baseLayer` references the currently active base so other code preserves it
+            if (saved === 'satellite') {
+                baseLayer = window.satelliteLayer;
+            } else {
+                baseLayer = window.osmLayer;
+            }
+            // Add active base to map
+            if (baseLayer && !map.hasLayer(baseLayer)) baseLayer.addTo(map);
+            // Build baseMaps after layers are created
+            const baseMaps = {
+                "מפה": window.osmLayer,
+                "לוויין": window.satelliteLayer
+            };
+            const layersControl = L.control.layers(baseMaps, {}, { position: 'topleft', collapsed: false }).addTo(map);
+            // Persist selection when user changes base layer (check layer identity)
+            map.on('baselayerchange', function(e) {
+                try {
+                    if (e && e.layer === window.satelliteLayer) {
+                        localStorage.setItem(LS_MAPTYPE_KEY, 'satellite');
+                        baseLayer = window.satelliteLayer;
+                    } else if (e && e.layer === window.osmLayer) {
+                        localStorage.setItem(LS_MAPTYPE_KEY, 'standard');
+                        baseLayer = window.osmLayer;
+                    } else {
+                        // fallback: clear or set to standard
+                        localStorage.setItem(LS_MAPTYPE_KEY, 'standard');
+                        baseLayer = window.osmLayer;
+                    }
+                } catch (err) {}
+            });
         }
         map.on('contextmenu', function(e) {
             if (e.originalEvent) e.originalEvent.preventDefault();
@@ -1284,6 +1348,9 @@
     document.addEventListener('DOMContentLoaded', function() {
         const mapTab = document.getElementById('tabMap'); const editorTab = document.getElementById('tabEditor'); const mapContainer = document.getElementById('mapContainer'); const editorContainer = document.getElementById('editorContainer');
         const headerControlsEl = document.getElementById('headerControls');
+        // Store scroll position for tab switching
+        let lastEditorScroll = 0;
+        let lastMapScroll = 0;
         // Load persisted route cache and last trip from localStorage
         loadRouteCacheFromStorage();
         const storedTrip = loadTripFromStorage();
@@ -1298,8 +1365,28 @@
             init_map();
             loadPlaces(getDays());
         }
-    function showMap() { editorContainer.classList.add('hidden'); mapContainer.classList.remove('hidden'); if (headerControlsEl) headerControlsEl.classList.remove('hidden'); routingEnabled = true; refreshMapDebounced(200); }
-    function showEditor() { mapContainer.classList.add('hidden'); editorContainer.classList.remove('hidden'); if (headerControlsEl) headerControlsEl.classList.add('hidden'); routingEnabled = false; refreshMapDebounced(0); }
+    function showMap() {
+        // Save editor scroll position before hiding
+        lastEditorScroll = window.scrollY;
+        editorContainer.classList.add('hidden');
+        mapContainer.classList.remove('hidden');
+        if (headerControlsEl) headerControlsEl.classList.remove('hidden');
+        routingEnabled = true;
+        refreshMapDebounced(200);
+        // Restore map scroll position
+        setTimeout(() => { window.scrollTo(0, lastMapScroll || 0); }, 0);
+    }
+    function showEditor() {
+        // Save map scroll position before hiding
+        lastMapScroll = window.scrollY;
+        mapContainer.classList.add('hidden');
+        editorContainer.classList.remove('hidden');
+        if (headerControlsEl) headerControlsEl.classList.add('hidden');
+        routingEnabled = false;
+        refreshMapDebounced(0);
+        // Restore editor scroll position
+        setTimeout(() => { window.scrollTo(0, lastEditorScroll || 0); }, 0);
+    }
     mapTab.onclick = showMap; editorTab.onclick = showEditor; // default: show map
     // Initialize map once (world view)
     init_map();
