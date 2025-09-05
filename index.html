@@ -306,6 +306,9 @@
                     try { dayObj.date = new Date(d.date).toISOString().slice(0,10); } catch (e) { /* ignore */ }
                 }
                 dayObj.color = typeof d.color === 'string' ? d.color : undefined;
+                // extra color pickers (optional)
+                dayObj.colorA = typeof d.colorA === 'string' ? d.colorA : undefined;
+                dayObj.colorB = typeof d.colorB === 'string' ? d.colorB : undefined;
                 dayObj.attractions = [];
                 if (Array.isArray(d.attractions)) {
                     for (let j = 0; j < d.attractions.length; j++) {
@@ -823,9 +826,12 @@
                         <input class="input w-40 px-2 py-1 rounded border bg-white text-black date-input" type="text" data-day="${dayIdx}" data-iso="${dayObj.date || ''}" value="${(dayObj.date ? (dayObj.dow ? dayObj.dow + ', ' + dayObj.date : dayObj.date) : (dayObj.dow || ''))}" placeholder="בחר תאריך" />
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
                         <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות" onclick="pasteAttractionToDay(${dayIdx})"><i class="fa-solid fa-paste"></i></button>
-                        <button class="toggle-day-state mr-auto px-2 py-1 rounded ${dayObj.state === 'complete' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}" title="סמן יום כ'הושלם'" data-day-idx="${dayIdx}">
-                            <i class="fa-solid fa-check${dayObj.state === 'complete' ? '' : '-to-slot'}"></i>
+                        <input type="color" class="w-8 h-8 mr-auto rounded" value="${dayObj.colorA || '#999999'}" onchange="editDayField(${dayIdx},'colorA',this.value)">
+                        <input type="color" class="w-8 h-8 rounded" value="${dayObj.colorB || '#999999'}" onchange="editDayField(${dayIdx},'colorB',this.value)">
+                        <button class="toggle-day-state px-2 py-1 rounded ${dayObj.state === 'complete' ? 'bg-green-500 text-green-900' : 'bg-gray-900 text-white'}" title="סמן יום כ'הושלם'" data-day-idx="${dayIdx}">
+                            <i class="fa-solid fa-check"></i>
                         </button>
+                        
                     </div>
                     <div class="space-y-2" id="attractions-${dayIdx}"></div>
                     <div class="flex gap-2 mt-2">
@@ -859,8 +865,10 @@
                         <span class="text-lg font-bold">(${dayObj.dow}, ${dayObj.date})</span>
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
                         <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות" onclick="pasteAttractionToDay(${dayIdx})"><i class="fa-solid fa-paste"></i></button>
-                        <button class="toggle-day-state mr-auto px-2 py-1 rounded ${dayObj.state === 'complete' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}" title="סמן יום כ'הושלם'" data-day-idx="${dayIdx}">
-                            <i class="fa-solid fa-check${dayObj.state === 'complete' ? '' : '-to-slot'}"></i>
+                        <input type="color" class="w-8 h-8 mr-auto rounded" value="${dayObj.colorA || '#999999'}" onchange="editDayField(${dayIdx},'colorA',this.value)">
+                        <input type="color" class="w-8 h-8 rounded" value="${dayObj.colorB || '#999999'}" onchange="editDayField(${dayIdx},'colorB',this.value)">
+                        <button class="toggle-day-state px-2 py-1 rounded ${dayObj.state === 'complete' ? 'bg-green-500 text-green-900' : 'bg-gray-900 text-white'}" title="סמן יום כ'הושלם'" data-day-idx="${dayIdx}">
+                            <i class="fa-solid fa-check"></i>
                         </button>
                     </div>
                     <div class="space-y-2" id="attractions-${dayIdx}"></div>
@@ -1017,7 +1025,7 @@
             window.open(wazeUrl, '_blank');
         } }
     function onUrlClick(url) { if (url && typeof url === 'string' && url.trim()) window.open(url, '_blank'); }
-    window.addDay = function() { const days = getDays(); const nextDay = days && days.length ? days[days.length-1].day+1 : 1; days.push({day: nextDay, dow:'', attractions:[], state:'in-progress'}); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
+    window.addDay = function() { const days = getDays(); const nextDay = days && days.length ? days[days.length-1].day+1 : 1; days.push({day: nextDay, dow:'', attractions:[], state:'in-progress', color: undefined, colorA: undefined, colorB: undefined}); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
     window.deleteDay = function(dayIdx) { showConfirmModal('למחוק את היום הזה?', function(confirmed) { if (confirmed) { const days = getDays(); days.splice(dayIdx,1); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); } }); }
     window.addAttraction = function(dayIdx) { const days = getDays(); if (!days[dayIdx].attractions) days[dayIdx].attractions = []; days[dayIdx].attractions.push({name:'',coordinates:[0,0],time:'',comments:''}); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
     window.deleteAttraction = function(dayIdx, attrIdx) { showConfirmModal('למחוק את הפעילות?', function(confirmed) { if (confirmed) { const days = getDays(); days[dayIdx].attractions.splice(attrIdx,1); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); } }); }
