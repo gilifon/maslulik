@@ -1104,13 +1104,12 @@
                         if (!header) return;
                         let span = header.querySelector('.day-total-price');
                         if (!span) {
-                            span = document.createElement('span');
-                            span.className = 'text-sm text-gray-300 day-total-price';
-                            span.style.marginRight = '8px';
-                            const toggleBtn = header.querySelector('.toggle-day-state');
+                            span = document.createElement('span');                            
+                            span.className = 'text-sm text-gray-300 day-total-price mr-2';
+                            const toggleBtn = headerEl.querySelector('.ColorA');                            
                             if (toggleBtn) header.insertBefore(span, toggleBtn); else header.appendChild(span);
                         }
-                        span.textContent = sum ? `סה\"כ: ${ (sum % 1 === 0 ? String(sum) : sum.toFixed(2)) }` : '';
+                        span.innerHTML = sum ? `<i class="fa-solid fa-coins"></i> ${ (sum % 1 === 0 ? String(sum) : sum.toFixed(2)) }` : '';
                     });
                 });
             });
