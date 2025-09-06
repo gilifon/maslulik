@@ -995,9 +995,23 @@
                 }
                 const textarea = commentRow.querySelector('textarea');
                 if (textarea) {
+                    // Auto-resize helper: size to content
+                    const resizeTextarea = function() {
+                        try {
+                            textarea.style.height = 'auto';
+                            textarea.style.height = (textarea.scrollHeight+10) + 'px';
+                        } catch (e) {}
+                    };
+                    // Initialize size after insertion
+                    setTimeout(resizeTextarea, 0);
+                    // Resize on input as the user types
+                    textarea.addEventListener('input', function() { resizeTextarea(); });
+                    // Save on change (existing behavior)
                     textarea.onchange = function() {
-                            const days = getDays(); days[dayIdx].attractions[attrIdx].comments = textarea.value; setDays(days);
+                        const days = getDays(); days[dayIdx].attractions[attrIdx].comments = textarea.value; setDays(days);
                         saveTripToStorageDebounced();
+                        // Ensure size reflects final content
+                        resizeTextarea();
                     };
                 }
                 // Toggle attraction enabled/disabled
