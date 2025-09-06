@@ -925,14 +925,14 @@
             const headerDiv = document.createElement('div'); 
             headerDiv.className = 'flex items-center gap-2 text-sm text-gray-200 text-center w-full'; 
             headerDiv.innerHTML = `
-            <span class="w-6 mr-2 rounded bg-gray-900 text-right px-2"><i class="fa-solid fa-arrows-up-down"></i></span>
-            <span class="w-10 rounded bg-gray-900"><i class="fa-solid fa-comments"></i></span>
-            <span class="w-6 rounded bg-gray-900"><i class="fa-solid fa-route"></i></span>
-            <span class="w-16 rounded bg-gray-900 text-right px-2">שעה</span>
-            <span class="w-16 rounded bg-gray-900"><i class="fa-solid fa-coins"></i></span>
-            <span class="w-84 rounded bg-gray-900 text-right px-2">פעילות</span>
-            <span class="w-36 rounded bg-gray-900 text-right px-2">קואורדינטות</span>
-            <span class="w-64 rounded bg-gray-900 text-right px-2">קישור</span>`; 
+            <span class="w-6 mr-2 rounded bg-gray-900 text-right px-2 py-1"><i class="fa-solid fa-arrows-up-down"></i></span>
+            <span class="w-10 rounded bg-gray-900 py-1"><i class="fa-solid fa-comments"></i></span>
+            <span class="w-6 rounded bg-gray-900 py-1"><i class="fa-solid fa-route"></i></span>
+            <span class="w-16 rounded bg-gray-900 text-right px-2 py-1">שעה</span>
+            <span class="w-16 rounded bg-gray-900 py-1"><i class="fa-solid fa-coins"></i></span>
+            <span class="w-84 rounded bg-gray-900 text-right px-2 py-1">פעילות</span>
+            <span class="w-36 rounded bg-gray-900 text-right px-2 py-1">קואורדינטות</span>
+            <span class="w-64 rounded bg-gray-900 text-right px-2 py-1">קישור</span>`; 
             container.appendChild(headerDiv);
         }
         attractions.forEach((attr, attrIdx) => {
@@ -1308,7 +1308,7 @@
                 .day{background:#111827;padding:12px;border-radius:8px;margin-bottom:14px;border:1px solid #1f2937; font-size:16px} 
                 .title-row{display:flex;align-items:center;gap:10px;margin-bottom:16px} 
                 .title-row h2{margin:0} 
-                .attr{padding:5px;border-radius:6px;background:#0b1220;border:1px solid #273142;margin:6px 0;display:flex;flex-direction:column;gap:2px} 
+                .attr{padding:5px;border-radius:6px;background:#0b1220;border:1px solid #273142;margin:6px 0;display:flex;flex-direction:row;justify-content:space-between; gap:2px} 
                 .attr-header{display:flex;align-items:center;gap:10px} 
                 .dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid rgba(255,255,255,0.06)} 
                 .links{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:4px} 
@@ -1336,9 +1336,9 @@
                     const [lat, lng] = a.coordinates || [0,0];
                     const gm = `https://www.google.com/maps?q=${lat},${lng}`;
                     const wz = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
-                    const urlHtml = a.url ? `<a href="${a.url}" target="_blank" rel="noopener">${svgExt}</a>` : '';
+                    const urlHtml = a.url ? `<a href="${a.url}" target="_blank" rel="noopener">${svgExt}</a>` : '<span style="width:20px;height:20px;display:inline-block;"></span>';
                     const timeHtml = a.time ? `<span>(${a.time})</span>` : '';
-                    const commentsHtml = a.comments ? `<div class="attr-comments" style="background:#22223b;color:#f1f1f1;padding:6px 10px;border-radius:6px;margin-top:4px;white-space:pre-line;font-size:15px;">${a.comments.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>` : '';
+                    const commentsHtml = a.comments ? `<div class="attr-comments" style="background:#101025;color:#f1f1f1;padding:6px 10px;border-radius:6px;border-width:1px;border-style:solid;border-color:#666677;margin-top:4px;white-space:pre-line;font-size:15px;">${a.comments.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>` : '';
                     bodyHtml += `<div class="attr">
                                     <div class="attr-header">
                                         <strong>${timeHtml}</strong>${a.name || ''}
@@ -1348,8 +1348,8 @@
                                         <a href="${wz}" target="_blank" rel="noopener">${svgWz}</a>
                                         ${urlHtml}
                                     </div>
-                                    ${commentsHtml}
-                                </div>`;
+                                </div>
+                                ${commentsHtml}`;
                 });
             } else {
                 bodyHtml += `<div class="attr">אין אטרקציות</div>`;
