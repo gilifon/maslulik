@@ -827,8 +827,9 @@
                         <input class="input w-40 px-2 py-1 rounded border bg-white text-black date-input" type="text" data-day="${dayIdx}" data-iso="${dayObj.date || ''}" value="${(dayObj.date ? (dayObj.dow ? dayObj.dow + ', ' + dayObj.date : dayObj.date) : (dayObj.dow || ''))}" placeholder="בחר תאריך" />
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
                         <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות" onclick="pasteAttractionToDay(${dayIdx})"><i class="fa-solid fa-paste"></i></button>
-                        <input type="color" class="w-8 h-8 mr-auto rounded" value="${dayObj.colorA || '#999999'}" onchange="editDayField(${dayIdx},'colorA',this.value)">
-                        <input type="color" class="w-8 h-8 rounded" value="${dayObj.colorB || '#999999'}" onchange="editDayField(${dayIdx},'colorB',this.value)">
+                        <span class="mr-8 text-gray-400">|</span>
+                        <input type="color" class="ColorA w-8 h-8 mr-auto rounded" value="${dayObj.colorA || '#999999'}" onchange="editDayField(${dayIdx},'colorA',this.value)">
+                        <input type="color" class="ColorB w-8 h-8 rounded" value="${dayObj.colorB || '#999999'}" onchange="editDayField(${dayIdx},'colorB',this.value)">
                         <button class="toggle-day-state px-2 py-1 rounded ${dayObj.state === 'complete' ? 'bg-green-500 text-green-900' : 'bg-gray-900 text-white'}" title="סמן יום כ'הושלם'" data-day-idx="${dayIdx}">
                             <i class="fa-solid fa-check"></i>
                         </button>
@@ -866,8 +867,9 @@
                         <span class="text-lg font-bold">(${dayObj.dow}, ${dayObj.date})</span>
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
                         <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות" onclick="pasteAttractionToDay(${dayIdx})"><i class="fa-solid fa-paste"></i></button>
-                        <input type="color" class="w-8 h-8 mr-auto rounded" value="${dayObj.colorA || '#999999'}" onchange="editDayField(${dayIdx},'colorA',this.value)">
-                        <input type="color" class="w-8 h-8 rounded" value="${dayObj.colorB || '#999999'}" onchange="editDayField(${dayIdx},'colorB',this.value)">
+                        <span class="mr-8 text-gray-400">|</span>
+                        <input type="color" class="ColorA w-8 h-8 mr-auto rounded" value="${dayObj.colorA || '#999999'}" onchange="editDayField(${dayIdx},'colorA',this.value)">
+                        <input type="color" class="ColorB w-8 h-8 rounded" value="${dayObj.colorB || '#999999'}" onchange="editDayField(${dayIdx},'colorB',this.value)">
                         <button class="toggle-day-state px-2 py-1 rounded ${dayObj.state === 'complete' ? 'bg-green-500 text-green-900' : 'bg-gray-900 text-white'}" title="סמן יום כ'הושלם'" data-day-idx="${dayIdx}">
                             <i class="fa-solid fa-check"></i>
                         </button>
@@ -879,6 +881,35 @@
                 `;
             }
             container.appendChild(dayDiv);
+            // Insert per-day total price label next to the colorB input / toggle button.
+            try {
+                const headerEl = dayDiv.querySelector('.day-header');
+                if (headerEl) {
+                    // remove previous total if present
+                    const prev = headerEl.querySelector('.day-total-price');
+                    if (prev) prev.remove();
+                    let sum = 0;
+                    if (Array.isArray(dayObj.attractions)) {
+                        dayObj.attractions.forEach(a => {
+                            if (!a) return;
+                            // allow values like '12.50' or '$12' or '12'
+                            const raw = (a.price === undefined || a.price === null) ? '' : String(a.price);
+                            const cleaned = raw.replace(/[^0-9.\-]/g, '');
+                            const n = parseFloat(cleaned);
+                            if (!isNaN(n)) sum += n;
+                        });
+                    }
+                    const sumDisplay = (sum === 0) ? '' : (sum % 1 === 0 ? String(sum) : sum.toFixed(2));
+                    const span = document.createElement('span');
+                    span.className = 'text-sm text-gray-300 day-total-price mr-2';
+                    // only show when there's a value
+                    span.innerHTML = sumDisplay ? `<i class="fa-solid fa-coins"></i> ${sumDisplay}` : '';
+                    const toggleBtn = headerEl.querySelector('.ColorA');
+                    if (toggleBtn) headerEl.insertBefore(span, toggleBtn);
+                    else headerEl.appendChild(span);
+                }
+            } catch (e) {}
+
             renderAttractions(dayObj.attractions, dayIdx);
         });
     // previously there was an inline "הוסף יום" button appended here; moved to persistent footer (#addDayFooterBtn)
@@ -899,8 +930,8 @@
             <span class="w-6 rounded bg-gray-900"><i class="fa-solid fa-route"></i></span>
             <span class="w-16 rounded bg-gray-900 text-right px-2">שעה</span>
             <span class="w-16 rounded bg-gray-900"><i class="fa-solid fa-coins"></i></span>
-            <span class="w-64 rounded bg-gray-900 text-right px-2">פעילות</span>
-            <span class="w-64 rounded bg-gray-900 text-right px-2">קואורדינטות</span>
+            <span class="w-84 rounded bg-gray-900 text-right px-2">פעילות</span>
+            <span class="w-36 rounded bg-gray-900 text-right px-2">קואורדינטות</span>
             <span class="w-64 rounded bg-gray-900 text-right px-2">קישור</span>`; 
             container.appendChild(headerDiv);
         }
@@ -970,8 +1001,8 @@
                 <button class="ml-1 toggle-attraction-btn ${enabled ? 'text-green-500' : 'text-gray-300'} rounded px-1 py-1" title="${enabled ? 'מוצג במפה' : 'מוסתר מהמפה'}">${enabled ? '<i class=\"fa-solid fa-toggle-on\"></i>' : '<i class=\"fa-solid fa-toggle-off\"></i>'}</button>
                 <input class="input w-16 px-2 py-1 rounded border time-input" type="text" data-day="${dayIdx}" data-attr="${attrIdx}" value="${attr.time || ''}" placeholder="hh:mm">
                 <input class="input w-16 px-2 py-1 rounded border price-input" type="text" data-day="${dayIdx}" data-attr="${attrIdx}" value="${attr.price || ''}" placeholder="$$$" onchange="editAttraction(${dayIdx},${attrIdx},'price',this.value)">
-                <input class="input w-64 px-2 py-1 rounded border" value="${attr.name}" onchange="editAttraction(${dayIdx},${attrIdx},'name',this.value)">
-                <input class="input w-64 px-2 py-1 rounded border coordinates" type="text" value="${attr.coordinates ? attr.coordinates.join(',') : ''}" onchange="editAttraction(${dayIdx},${attrIdx},'coordinates',this.value)">
+                <input class="input w-84 px-2 py-1 rounded border" value="${attr.name}" onchange="editAttraction(${dayIdx},${attrIdx},'name',this.value)">
+                <input class="input w-36 px-2 py-1 rounded border coordinates" type="text" value="${attr.coordinates ? attr.coordinates.join(',') : ''}" onchange="editAttraction(${dayIdx},${attrIdx},'coordinates',this.value)">
                 <input class="input w-64 px-2 py-1 rounded border" type="url" placeholder="https://..." value="${attr.url || ''}" onchange="editAttraction(${dayIdx},${attrIdx},'url',this.value)" dir="ltr">
                 <button class="text-red-400 hover:text-red-600 location-btn" title="מפה"><i class="fa-solid fa-location-dot"></i></button>
                 <button class="text-sky-300 hover:text-sky-300 waze-btn" title="Waze"><i class="fa-brands fa-waze"></i></button>
@@ -1046,6 +1077,45 @@
     try { initTimePickers(); } catch (e) {}
     // initialize datepickers (in case any were added inside day header)
     try { initDatePickers(); } catch (e) {}
+
+    // Attach live update handlers for price inputs so the per-day total label updates immediately
+    try {
+        setTimeout(() => {
+            const attractionContainers = document.querySelectorAll('[id^="attractions-"]');
+            attractionContainers.forEach(container => {
+                const dayId = container.id.split('-')[1];
+                const priceInputs = container.querySelectorAll('.price-input');
+                priceInputs.forEach(inp => {
+                    // avoid double-binding
+                    if (inp._priceBound) return; inp._priceBound = true;
+                    inp.addEventListener('change', () => {
+                        // compute sum for this day
+                        let sum = 0;
+                        priceInputs.forEach(pi => {
+                            const raw = pi.value || '';
+                            const cleaned = (""+raw).replace(/[^0-9.\-]/g, '');
+                            const n = parseFloat(cleaned);
+                            if (!isNaN(n)) sum += n;
+                        });
+                        // find header in the parent day container
+                        const dayContainer = container.parentElement;
+                        if (!dayContainer) return;
+                        let header = dayContainer.querySelector('.day-header');
+                        if (!header) return;
+                        let span = header.querySelector('.day-total-price');
+                        if (!span) {
+                            span = document.createElement('span');
+                            span.className = 'text-sm text-gray-300 day-total-price';
+                            span.style.marginRight = '8px';
+                            const toggleBtn = header.querySelector('.toggle-day-state');
+                            if (toggleBtn) header.insertBefore(span, toggleBtn); else header.appendChild(span);
+                        }
+                        span.textContent = sum ? `סה\"כ: ${ (sum % 1 === 0 ? String(sum) : sum.toFixed(2)) }` : '';
+                    });
+                });
+            });
+        },0);
+    } catch (e) {}
     }
 
     // Editor utilities and CRUD
