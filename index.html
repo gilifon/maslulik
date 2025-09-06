@@ -1027,10 +1027,17 @@
                 }
             }, 0);
             // wire buttons
-            setTimeout(() => { // ensure DOM present
+                setTimeout(() => { // ensure DOM present
                 const locationBtn = attrDiv.querySelector('.location-btn'); if (locationBtn) locationBtn.onclick = function() { if(attr.coordinates) onLocationClick(attr.coordinates[0], attr.coordinates[1]); };
                 const wazeBtn = attrDiv.querySelector('.waze-btn'); if (wazeBtn) wazeBtn.onclick = function() { if(attr.coordinates) onWazeClick(attr.coordinates[0], attr.coordinates[1]); };
                 const urlBtn = attrDiv.querySelector('.url-btn'); if (urlBtn) urlBtn.onclick = function() { onUrlClick(attr.url); };
+                // Auto-select coordinates input on focus/click
+                const coordInput = attrDiv.querySelector('.coordinates');
+                if (coordInput) {
+                    coordInput.addEventListener('focus', function(e) { try { e.target.select(); } catch (err) {} });
+                    // Prevent mouseup from deselecting the selected text after click
+                    coordInput.addEventListener('mouseup', function(e) { try { e.preventDefault(); } catch (err) {} });
+                }
             }, 0);
             container.appendChild(attrDiv);
             container.appendChild(commentRow);
