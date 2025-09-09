@@ -61,7 +61,10 @@
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-bold"><i class="fa-solid fa-map-location-dot ml-2"></i>המסלולים שלי</h3>
                             <div class="flex items-center gap-2">
-                                <button id="saveToLibraryBtn" class="px-3 py-1 bg-green-600 text-white rounded"><i class="fa-solid fa-save ml-2"></i>שמור את המסלול הנוכחי</button>
+                                <button id="fileLoaderBtn" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center">
+                                    <i class="fa-solid fa-folder-open ml-2"></i>יבוא
+                                </button>
+                                <button id="saveToLibraryBtn" class="px-3 py-1 bg-green-600 text-white rounded"><i class="fa-solid fa-save ml-2"></i>שמור</button>
                                 <button id="closeSavedTripsBtn" class="px-3 py-1 bg-gray-600 text-white rounded">סגור</button>
                             </div>
                         </div>
@@ -103,19 +106,18 @@
                 <!-- Editor container (hidden by default) -->
                 <section id="editorContainer" class="hidden">
                     <!-- Editor top bar (file loader lives here) -->
-                    <div class="flex items-center gap-4 bg-gray-600 text-gray-200 rounded-lg p-2 mt-16">
-                        <button id="fileLoaderBtn" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center">
+                    <div class="flex items-center gap-4 bg-gray-600 text-gray-200 rounded-lg p-2 mt-16 sticky top-17 z-20 w-full">
+                        <!-- <button id="fileLoaderBtn" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center">
                             <i class="fa-solid fa-folder-open ml-2"></i>יבוא מסלול
-                        </button>
+                        </button> -->
                         <!-- Trip metadata (name & description) -->
                         <div class="flex rounded">
                             <div class="flex bg-gray-800 text-gray-300 rounded">
                                 <input id="tripNameInput" type="text" placeholder="שם המסלול" class="input w-48 px-2 py-1 rounded border">
                             </div>
-                            <div class="flex bg-gray-800 text-gray-300 rounded mr-4 items-center">
+                            <div class="flex bg-gray-800 text-gray-300 rounded mr-4">
                                 <input id="tripDescInput" type="text" placeholder="תיאור קצר" class="input w-128 px-2 py-1 rounded border">
                             </div>
-                            <div id="tripEstDrive" class="flex bg-gray-300 text-black rounded mr-4 items-center px-2 py-1 border" title="זמן נהיגה משוער"></div>
                         </div>
                         <input
                             type="file"
@@ -140,8 +142,8 @@
                         <div id="editor" class="space-y-6"></div>
                     </main>
                     <!-- Editor footer (fixed to viewport bottom) -->
-                    <footer id="editorFooter" class="w-full bg-gray-800 shadow p-4 flex items-center justify-center fixed bottom-0 left-0 z-10">
-                        <button id="addDayFooterBtn" class="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800 flex items-center gap-2">
+                    <footer id="editorFooter" class="w-full bg-gray-800 shadow p-2 flex items-center justify-center fixed bottom-0 left-0 z-10">
+                        <button id="addDayFooterBtn" class="px-2 py-1 bg-green-700 text-white rounded hover:bg-green-800 flex items-center gap-1">
                             <i class="fa-solid fa-plus"></i> הוסף יום
                         </button>
                     </footer>
@@ -300,6 +302,7 @@
                 const dayObj = {};
                 dayObj.day = Number.isFinite(d.day) ? d.day : (sanitized.length + 1);
                 dayObj.dow = typeof d.dow === 'string' ? d.dow : '';
+                dayObj.state = d.state === 'complete' ? 'complete' : 'in-progress';
                 // restore explicit ISO date string if present in persisted data
                 if (typeof d.date === 'string' && d.date.trim()) {
                     dayObj.date = d.date;
@@ -307,6 +310,9 @@
                     try { dayObj.date = new Date(d.date).toISOString().slice(0,10); } catch (e) { /* ignore */ }
                 }
                 dayObj.color = typeof d.color === 'string' ? d.color : undefined;
+                // extra color pickers (optional)
+                dayObj.colorA = typeof d.colorA === 'string' ? d.colorA : undefined;
+                dayObj.colorB = typeof d.colorB === 'string' ? d.colorB : undefined;
                 dayObj.attractions = [];
                 if (Array.isArray(d.attractions)) {
                     for (let j = 0; j < d.attractions.length; j++) {
@@ -325,9 +331,10 @@
                         if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
                         const url = typeof a.url === 'string' ? a.url : '';
                         const time = typeof a.time === 'string' ? a.time : '';
+                        const price = (typeof a.price === 'string') ? a.price : (Number.isFinite(a.price) ? String(a.price) : '');
                         const comments = typeof a.comments === 'string' ? a.comments : '';
                         const enabled = (typeof a.enabled === 'boolean') ? a.enabled : true;
-                        dayObj.attractions.push({ name: name, coordinates: [lat, lng], url: url, time: time, comments: comments, enabled: enabled });
+                        dayObj.attractions.push({ name: name, coordinates: [lat, lng], url: url, time: time, price: price, comments: comments, enabled: enabled });
                     }
                 }
                 sanitized.push(dayObj);
@@ -731,13 +738,13 @@
         const tripObj = ensureTrip();
         const todos = tripObj.todos;
         const todoDiv = document.createElement('div');
-        todoDiv.className = 'bg-gray-900 rounded-lg p-3 shadow w-full border border-gray-600 text-gray-800 text-right';
+        todoDiv.className = 'bg-gray-900 rounded-lg p-2 shadow w-full border border-gray-600 text-gray-800 text-right';
         todoDiv.innerHTML = `
-            <div class="todoListHeader flex items-center justify-between mb-2">
+            <div class="todoListHeader flex items-center justify-between">
                 <h2 class="text-lg font-bold text-gray-200 flex items-center gap-2"><i class="fa-solid fa-list-check"></i>משימות <span id="todoOpenCount" class="text-sm text-gray-400">(0)</span></h2>
                 <button id="collapseTodosBtn" class="text-gray-300 hover:text-orange-400 text-lg" title="הסתר/הצג"><i class="fa-solid ${tripObj.todosCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'}"></i></button>
             </div>
-            <div id="todoList" class="space-y-2 mb-2" style="display:${tripObj.todosCollapsed ? 'none' : 'block'}"></div>
+            <div id="todoList" class="space-y-2 mb-2 mt-2" style="display:${tripObj.todosCollapsed ? 'none' : 'block'}"></div>
             <div id="todoAddRow" class="flex gap-2 mt-2" style="display:${tripObj.todosCollapsed ? 'none' : 'flex'}">
                 <input id="newTodoInput" class="input w-full px-2 py-1 rounded border bg-gray-800 text-white" type="text" placeholder="הוסף משימה..." />
                 <button id="addTodoBtn" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"><i class="fa-solid fa-plus"></i></button>
@@ -866,8 +873,24 @@
     _days.forEach((dayObj, dayIdx) => {
             if (!dayObj.color) dayObj.color = dayColors[dayIdx % dayColors.length];
             const dayDiv = document.createElement('div');
-            dayDiv.className = 'bg-gray-900 rounded-lg p-3 shadow w-full border border-gray-600 text-gray-800';
+            dayDiv.className = `rounded-lg p-3 shadow w-full border text-white ${dayObj.state === 'complete' ? 'bg-green-900 border-green-300' : 'bg-gray-900 border-gray-600'}`;
             dayDiv.setAttribute('data-day-idx', dayIdx);
+
+            // Add event listener for state toggle after rendering
+            setTimeout(() => {
+                const toggleBtn = dayDiv.querySelector('.toggle-day-state');
+                if (toggleBtn) {
+                    toggleBtn.addEventListener('click', function() {
+                        const days = getDays();
+                        const idx = Number(toggleBtn.getAttribute('data-day-idx'));
+                        if (!days[idx]) return;
+                        days[idx].state = days[idx].state === 'complete' ? 'in-progress' : 'complete';
+                        setDays(days);
+                        renderEditor();
+                        saveTripToStorageDebounced();
+                    });
+                }
+            }, 0);
             // Only allow drag if started from the header (first child)
             dayDiv.addEventListener('dragstart', function(e) {
                 // Only allow drag if started from header (first child)
@@ -922,11 +945,17 @@
                         <input class="input w-40 px-2 py-1 rounded border bg-white text-black date-input" type="text" data-day="${dayIdx}" data-iso="${dayObj.date || ''}" value="${(dayObj.date ? (dayObj.dow ? dayObj.dow + ', ' + dayObj.date : dayObj.date) : (dayObj.dow || ''))}" placeholder="בחר תאריך" />
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
                         <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות" onclick="pasteAttractionToDay(${dayIdx})"><i class="fa-solid fa-paste"></i></button>
-                        <span id="dayDrive-${dayIdx}" class="flex bg-gray-300 text-black rounded mr-4 items-center px-2 py-1 border" title="זמן נהיגה משוער"></span>
+                        <span class="mr-8 text-gray-400">|</span>
+                        <input type="color" class="ColorA w-8 h-8 mr-auto rounded" value="${dayObj.colorA || '#999999'}" onchange="editDayField(${dayIdx},'colorA',this.value)">
+                        <input type="color" class="ColorB w-8 h-8 rounded" value="${dayObj.colorB || '#999999'}" onchange="editDayField(${dayIdx},'colorB',this.value)">
+                        <button class="toggle-day-state px-2 py-1 rounded ${dayObj.state === 'complete' ? 'bg-green-500 text-green-900' : 'bg-gray-900 text-white'}" title="סמן יום כ'הושלם'" data-day-idx="${dayIdx}">
+                            <i class="fa-solid fa-check"></i>
+                        </button>
+                        
                     </div>
                     <div class="space-y-2" id="attractions-${dayIdx}"></div>
                     <div class="flex gap-2 mt-2">
-                        <button class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700" onclick="addAttraction(${dayIdx})"><i class="fa-solid fa-plus ml-1"></i> הוסף פעילות</button>
+                        <button class="px-3 py-1 border border-black bg-green-600 text-white rounded hover:bg-green-700" onclick="addAttraction(${dayIdx})"><i class="fa-solid fa-plus ml-1"></i> הוסף פעילות</button>
                     </div>
                 `;
             } else {
@@ -956,15 +985,49 @@
                         <span class="text-lg font-bold">(${dayObj.dow}, ${dayObj.date})</span>
                         <button class="text-red-400 hover:text-red-600" title="מחק יום" onclick="deleteDay(${dayIdx})"><i class="fa-solid fa-trash"></i></button>
                         <button class="text-orange-300 hover:text-orange-300" title="הדבק פעילות" onclick="pasteAttractionToDay(${dayIdx})"><i class="fa-solid fa-paste"></i></button>
-                        <span id="dayDrive-${dayIdx}" class="flex bg-gray-300 text-black rounded mr-4 items-center px-2 py-1 border" title="זמן נהיגה משוער"></span>
+                        <span class="mr-8 text-gray-400">|</span>
+                        <input type="color" class="ColorA w-8 h-8 mr-auto rounded" value="${dayObj.colorA || '#999999'}" onchange="editDayField(${dayIdx},'colorA',this.value)">
+                        <input type="color" class="ColorB w-8 h-8 rounded" value="${dayObj.colorB || '#999999'}" onchange="editDayField(${dayIdx},'colorB',this.value)">
+                        <button class="toggle-day-state px-2 py-1 rounded ${dayObj.state === 'complete' ? 'bg-green-500 text-green-900' : 'bg-gray-900 text-white'}" title="סמן יום כ'הושלם'" data-day-idx="${dayIdx}">
+                            <i class="fa-solid fa-check"></i>
+                        </button>
                     </div>
                     <div class="space-y-2" id="attractions-${dayIdx}"></div>
                     <div class="flex gap-2 mt-2">
-                        <button class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700" onclick="addAttraction(${dayIdx})"><i class="fa-solid fa-plus ml-1"></i> הוסף פעילות</button>
+                        <button class="px-3 py-1 border border-black bg-green-600 text-white rounded hover:bg-green-700" onclick="addAttraction(${dayIdx})"><i class="fa-solid fa-plus ml-1"></i> הוסף פעילות</button>
                     </div>
                 `;
             }
             container.appendChild(dayDiv);
+            // Insert per-day total price label next to the colorB input / toggle button.
+            try {
+                const headerEl = dayDiv.querySelector('.day-header');
+                if (headerEl) {
+                    // remove previous total if present
+                    const prev = headerEl.querySelector('.day-total-price');
+                    if (prev) prev.remove();
+                    let sum = 0;
+                    if (Array.isArray(dayObj.attractions)) {
+                        dayObj.attractions.forEach(a => {
+                            if (!a) return;
+                            // allow values like '12.50' or '$12' or '12'
+                            const raw = (a.price === undefined || a.price === null) ? '' : String(a.price);
+                            const cleaned = raw.replace(/[^0-9.\-]/g, '');
+                            const n = parseFloat(cleaned);
+                            if (!isNaN(n)) sum += n;
+                        });
+                    }
+                    const sumDisplay = (sum === 0) ? '' : (sum % 1 === 0 ? String(sum) : sum.toFixed(2));
+                    const span = document.createElement('span');
+                    span.className = 'text-sm text-gray-300 day-total-price mr-2';
+                    // only show when there's a value
+                    span.innerHTML = sumDisplay ? `<i class="fa-solid fa-coins"></i> ${sumDisplay}` : '';
+                    const toggleBtn = headerEl.querySelector('.ColorA');
+                    if (toggleBtn) headerEl.insertBefore(span, toggleBtn);
+                    else headerEl.appendChild(span);
+                }
+            } catch (e) {}
+
             renderAttractions(dayObj.attractions, dayIdx);
         });
     // previously there was an inline "הוסף יום" button appended here; moved to persistent footer (#addDayFooterBtn)
@@ -981,7 +1044,15 @@
         if (attractions.length > 0) {
             const headerDiv = document.createElement('div'); 
             headerDiv.className = 'flex items-center gap-2 text-sm text-gray-200 text-center w-full'; 
-            headerDiv.innerHTML = `<span class="w-6 mr-2"><i class="fa-solid fa-arrows-up-down"></i></span><span class="w-10">הערות</span><span class="w-6"><i class="fa-solid fa-route"></i></span><span class="w-12">שעה</span><span class="w-52">פעילות</span><span class="w-86">קואורדינטות</span><span class="w-32">קישור</span>`; 
+            headerDiv.innerHTML = `
+            <span class="w-6 mr-2 rounded bg-gray-900 text-right px-2 py-1"><i class="fa-solid fa-arrows-up-down"></i></span>
+            <span class="w-10 rounded bg-gray-900 py-1"><i class="fa-solid fa-comments"></i></span>
+            <span class="w-6 rounded bg-gray-900 py-1"><i class="fa-solid fa-route"></i></span>
+            <span class="w-16 rounded bg-gray-900 text-right px-2 py-1">שעה</span>
+            <span class="w-16 rounded bg-gray-900 py-1"><i class="fa-solid fa-coins"></i></span>
+            <span class="w-84 rounded bg-gray-900 text-right px-2 py-1">פעילות</span>
+            <span class="w-36 rounded bg-gray-900 text-right px-2 py-1">קואורדינטות</span>
+            <span class="w-64 rounded bg-gray-900 text-right px-2 py-1">קישור</span>`; 
             container.appendChild(headerDiv);
         }
         attractions.forEach((attr, attrIdx) => {
@@ -1050,11 +1121,12 @@
                 <button class="cursor-move px-1 py-1 text-blue-400 hover:text-blue-600 order-btn" title="שנה סדר" draggable="true"><i class="fa-solid fa-bars"></i></button>
                 <button class="px-1 py-1 ml-1 ${commentBtnClass} hover:text-gray-200 comment-toggle-btn" title="הערות" style="font-size:1.2em;">${isExpanded ? '<i class=\"fa-solid fa-chevron-up\"></i>' : '<i class=\"fa-solid fa-comments\"></i>'}</button>
                 <button class="ml-1 toggle-attraction-btn ${enabled ? 'text-green-500' : 'text-gray-300'} rounded px-1 py-1" title="${enabled ? 'מוצג במפה' : 'מוסתר מהמפה'}">${enabled ? '<i class=\"fa-solid fa-toggle-on\"></i>' : '<i class=\"fa-solid fa-toggle-off\"></i>'}</button>
-                <input class="input w-32 px-2 py-1 rounded border time-input" type="text" data-day="${dayIdx}" data-attr="${attrIdx}" value="${attr.time || ''}" placeholder="hh:mm">
-                <input class="input w-64 px-2 py-1 rounded border" value="${attr.name}" onchange="editAttraction(${dayIdx},${attrIdx},'name',this.value)">
-                <input class="input w-64 px-2 py-1 rounded border coordinates" type="text" value="${attr.coordinates ? attr.coordinates.join(',') : ''}" onchange="editAttraction(${dayIdx},${attrIdx},'coordinates',this.value)">
+                <input class="input w-16 px-2 py-1 rounded border time-input" type="text" data-day="${dayIdx}" data-attr="${attrIdx}" value="${attr.time || ''}" placeholder="hh:mm">
+                <input class="input w-16 px-2 py-1 rounded border price-input" type="text" data-day="${dayIdx}" data-attr="${attrIdx}" value="${attr.price || ''}" placeholder="$$$" onchange="editAttraction(${dayIdx},${attrIdx},'price',this.value)">
+                <input class="input w-84 px-2 py-1 rounded border" value="${attr.name}" onchange="editAttraction(${dayIdx},${attrIdx},'name',this.value)">
+                <input class="input w-36 px-2 py-1 rounded border coordinates" type="text" value="${attr.coordinates ? attr.coordinates.join(',') : ''}" onchange="editAttraction(${dayIdx},${attrIdx},'coordinates',this.value)">
                 <input class="input w-64 px-2 py-1 rounded border" type="url" placeholder="https://..." value="${attr.url || ''}" onchange="editAttraction(${dayIdx},${attrIdx},'url',this.value)" dir="ltr">
-                <button class="text-blue-400 hover:text-blue-600 location-btn" title="מפה"><i class="fa-solid fa-location-dot"></i></button>
+                <button class="text-red-400 hover:text-red-600 location-btn" title="מפה"><i class="fa-solid fa-location-dot"></i></button>
                 <button class="text-sky-300 hover:text-sky-300 waze-btn" title="Waze"><i class="fa-brands fa-waze"></i></button>
                 <button class="text-green-400 hover:text-green-600 url-btn" title="קישור"><i class="fa-solid fa-link"></i></button>
                 <button class="text-orange-300 hover:text-orange-100 copy-attr-btn" title="העתק פעילות" onclick="copyAttractionToClipboard(${dayIdx},${attrIdx})"><i class="fa-solid fa-copy"></i></button>
@@ -1076,9 +1148,23 @@
                 }
                 const textarea = commentRow.querySelector('textarea');
                 if (textarea) {
+                    // Auto-resize helper: size to content
+                    const resizeTextarea = function() {
+                        try {
+                            textarea.style.height = 'auto';
+                            textarea.style.height = (textarea.scrollHeight+10) + 'px';
+                        } catch (e) {}
+                    };
+                    // Initialize size after insertion
+                    setTimeout(resizeTextarea, 0);
+                    // Resize on input as the user types
+                    textarea.addEventListener('input', function() { resizeTextarea(); });
+                    // Save on change (existing behavior)
                     textarea.onchange = function() {
-                            const days = getDays(); days[dayIdx].attractions[attrIdx].comments = textarea.value; setDays(days);
+                        const days = getDays(); days[dayIdx].attractions[attrIdx].comments = textarea.value; setDays(days);
                         saveTripToStorageDebounced();
+                        // Ensure size reflects final content
+                        resizeTextarea();
                     };
                 }
                 // Toggle attraction enabled/disabled
@@ -1094,10 +1180,17 @@
                 }
             }, 0);
             // wire buttons
-            setTimeout(() => { // ensure DOM present
+                setTimeout(() => { // ensure DOM present
                 const locationBtn = attrDiv.querySelector('.location-btn'); if (locationBtn) locationBtn.onclick = function() { if(attr.coordinates) onLocationClick(attr.coordinates[0], attr.coordinates[1]); };
                 const wazeBtn = attrDiv.querySelector('.waze-btn'); if (wazeBtn) wazeBtn.onclick = function() { if(attr.coordinates) onWazeClick(attr.coordinates[0], attr.coordinates[1]); };
                 const urlBtn = attrDiv.querySelector('.url-btn'); if (urlBtn) urlBtn.onclick = function() { onUrlClick(attr.url); };
+                // Auto-select coordinates input on focus/click
+                const coordInput = attrDiv.querySelector('.coordinates');
+                if (coordInput) {
+                    coordInput.addEventListener('focus', function(e) { try { e.target.select(); } catch (err) {} });
+                    // Prevent mouseup from deselecting the selected text after click
+                    coordInput.addEventListener('mouseup', function(e) { try { e.preventDefault(); } catch (err) {} });
+                }
             }, 0);
             container.appendChild(attrDiv);
             container.appendChild(commentRow);
@@ -1106,6 +1199,44 @@
     try { initTimePickers(); } catch (e) {}
     // initialize datepickers (in case any were added inside day header)
     try { initDatePickers(); } catch (e) {}
+
+    // Attach live update handlers for price inputs so the per-day total label updates immediately
+    try {
+        setTimeout(() => {
+            const attractionContainers = document.querySelectorAll('[id^="attractions-"]');
+            attractionContainers.forEach(container => {
+                const dayId = container.id.split('-')[1];
+                const priceInputs = container.querySelectorAll('.price-input');
+                priceInputs.forEach(inp => {
+                    // avoid double-binding
+                    if (inp._priceBound) return; inp._priceBound = true;
+                    inp.addEventListener('change', () => {
+                        // compute sum for this day
+                        let sum = 0;
+                        priceInputs.forEach(pi => {
+                            const raw = pi.value || '';
+                            const cleaned = (""+raw).replace(/[^0-9.\-]/g, '');
+                            const n = parseFloat(cleaned);
+                            if (!isNaN(n)) sum += n;
+                        });
+                        // find header in the parent day container
+                        const dayContainer = container.parentElement;
+                        if (!dayContainer) return;
+                        let header = dayContainer.querySelector('.day-header');
+                        if (!header) return;
+                        let span = header.querySelector('.day-total-price');
+                        if (!span) {
+                            span = document.createElement('span');                            
+                            span.className = 'text-sm text-gray-300 day-total-price mr-2';
+                            const toggleBtn = headerEl.querySelector('.ColorA');                            
+                            if (toggleBtn) header.insertBefore(span, toggleBtn); else header.appendChild(span);
+                        }
+                        span.innerHTML = sum ? `<i class="fa-solid fa-coins"></i> ${ (sum % 1 === 0 ? String(sum) : sum.toFixed(2)) }` : '';
+                    });
+                });
+            });
+        },0);
+    } catch (e) {}
     }
 
     // Editor utilities and CRUD
@@ -1116,9 +1247,9 @@
             window.open(wazeUrl, '_blank');
         } }
     function onUrlClick(url) { if (url && typeof url === 'string' && url.trim()) window.open(url, '_blank'); }
-    window.addDay = function() { const days = getDays(); const nextDay = days && days.length ? days[days.length-1].day+1 : 1; days.push({day: nextDay, dow:'', attractions:[]}); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
+    window.addDay = function() { const days = getDays(); const nextDay = days && days.length ? days[days.length-1].day+1 : 1; days.push({day: nextDay, dow:'', attractions:[], state:'in-progress', color: undefined, colorA: undefined, colorB: undefined}); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
     window.deleteDay = function(dayIdx) { showConfirmModal('למחוק את היום הזה?', function(confirmed) { if (confirmed) { const days = getDays(); days.splice(dayIdx,1); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); } }); }
-    window.addAttraction = function(dayIdx) { const days = getDays(); if (!days[dayIdx].attractions) days[dayIdx].attractions = []; days[dayIdx].attractions.push({name:'',coordinates:[0,0],time:'',comments:''}); setDays(days); try { updateAllDayDriveLabels(); updateTripEstDriveLabel(); } catch(e){} renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
+    window.addAttraction = function(dayIdx) { const days = getDays(); if (!days[dayIdx].attractions) days[dayIdx].attractions = []; days[dayIdx].attractions.push({name:'',coordinates:[0,0],time:'',price:'',comments:''}); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
     window.deleteAttraction = function(dayIdx, attrIdx) { showConfirmModal('למחוק את הפעילות?', function(confirmed) { if (confirmed) { const days = getDays(); days[dayIdx].attractions.splice(attrIdx,1); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); } }); }
     window.editAttraction = function(dayIdx, attrIdx, field, value) {
         if (field === 'coordinates') {
@@ -1270,7 +1401,7 @@
         refreshMapDebounced();
         saveTripToStorageDebounced();
     }
-
+    
     // Save/download
     document.addEventListener('click', function(e) { if (e.target && e.target.id === 'saveBtn') {
         const b = ensureTrip(); const blob = new Blob([JSON.stringify(b, null, 4)], {type:'application/json'});
@@ -1295,23 +1426,24 @@
     function exportStaticHtml() {
         if (!getDays() || getDays().length === 0) { showToast('אין מה לייצא', true); return; }
         // Minimal inline CSS to keep it readable offline
-    const css = `body{font-family:Arial,Helvetica,sans-serif;background:#0b1220;color:#e5e7eb;padding:10px;line-height:1.1}
+    const css = `body{font-family:Arial,Helvetica,sans-serif;background:#0b1220;color:#e5e7eb;padding:10px;line-height:1.1;margin:auto;max-width:500px}
                  h1{color:#60a5fa;margin-bottom:2px}h2{color:#bfdbfe;margin:0 0 8px 0; font-size: 18px}
                  a{color:#93c5fd;text-decoration:none} 
-                .day{background:#111827;padding:12px;border-radius:8px;margin-bottom:14px;border:1px solid #1f2937; font-size:16px} 
+                .day{background:#111827;padding:12px;border-radius:8px;margin-bottom:4px;border:1px solid #1f2937; font-size:16px} 
                 .title-row{display:flex;align-items:center;gap:10px;margin-bottom:16px} 
                 .title-row h2{margin:0} 
-                .attr{padding:5px;border-radius:6px;background:#0b1220;border:1px solid #273142;margin:6px 0;display:flex;flex-direction:column;gap:2px} 
+                .attr{padding:2px 5px;border-radius:6px;background:#0b1220;border:1px solid #273142;margin:2px 0;display:flex;flex-direction:row;justify-content:space-between; gap:2px} 
                 .attr-header{display:flex;align-items:center;gap:10px} 
+                .attr-comments{background:#242434;color:#f1f1f1;padding:6px 10px;border-radius:6px;border-width:1px;border-style:solid;border-color:#666677;margin-top:4px;white-space:pre-line;font-size:16px} 
                 .dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid rgba(255,255,255,0.06)} 
                 .links{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:4px} 
                 .icon{width:18px;height:18px;vertical-align:middle;margin-left:6px;fill:currentColor}`;
 
         // Inline SVG icons
-        const svgGm = `<?xml version="1.0" encoding="utf-8"?><svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="20" height="20" viewBox="0 0 92.25 122.88" style="enable-background:new 0 0 92.25 122.88" xml:space="preserve"><style type="text/css">.st0{fill-rule:evenodd;clip-rule:evenodd;}</style><g><path class="st0" d="M68.51,106.28c-5.59,6.13-12.1,11.62-19.41,16.06c-0.9,0.66-2.12,0.74-3.12,0.1 c-10.8-6.87-19.87-15.12-27-24.09C9.14,86.01,2.95,72.33,0.83,59.15c-2.16-13.36-0.14-26.22,6.51-36.67 c2.62-4.13,5.97-7.89,10.05-11.14C26.77,3.87,37.48-0.08,48.16,0c10.28,0.08,20.43,3.91,29.2,11.92c3.08,2.8,5.67,6.01,7.79,9.49 c7.15,11.78,8.69,26.8,5.55,42.02c-3.1,15.04-10.8,30.32-22.19,42.82V106.28L68.51,106.28z M46.12,23.76 c12.68,0,22.95,10.28,22.95,22.95c0,12.68-10.28,22.95-22.95,22.95c-12.68,0-22.95-10.27-22.95-22.95 C23.16,34.03,33.44,23.76,46.12,23.76L46.12,23.76z"/></g></svg>`;
-        const svgWz = `<?xml version="1.0" encoding="utf-8"?><svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="20" height="20" viewBox="0 0 122.71 122.88" style="enable-background:new 0 0 122.71 122.88" xml:space="preserve"><style type="text/css"><![CDATA[.st0{fill:#FFFFFF;}]]></style><g><path class="st0" d="M55.14,104.21c4.22,0,8.44,0.19,12.66-0.09c3.84-0.19,7.88-0.56,11.63-1.5c29.82-7.31,45.76-40.23,32.72-68.07 C104.27,17.76,90.77,8.19,72.3,6.22c-14.16-1.5-26.82,2.72-37.51,12.28c-10.5,9.47-15.94,21.28-16.31,35.44 c-0.09,3.28,0,6.66,0,9.94C18.38,71.02,14.35,76.55,7.5,78.7c-0.09,0-0.28,0.19-0.38,0.19c2.63,6.94,13.31,17.16,19.97,19.69 C35.45,87.14,52.32,91.18,55.14,104.21L55.14,104.21z"/><path d="M54.95,110.49c-1.03,4.69-3.56,8.16-7.69,10.31c-5.25,2.72-10.6,2.63-15.57-0.56c-5.16-3.28-7.41-8.25-7.03-14.35 c0.09-1.03-0.19-1.41-1.03-1.88c-9.1-4.78-16.31-11.44-21.28-20.44c-0.94-1.78-1.69-3.66-2.16-5.63c-0.66-2.72,0.38-4.03,3.19-4.31 c3.38-0.38,6.38-1.69,7.88-4.88c0.66-1.41,1.03-3.09,1.03-4.69c0.19-4.03,0-8.06,0.19-12.1c1.03-15.57,7.5-28.5,19.32-38.63 C42.67,3.97,55.42-0.43,69.76,0.03c25.04,0.94,46.51,18.57,51.57,43.23c4.59,22.32-2.34,40.98-20.07,55.51 c-1.03,0.84-2.16,1.69-3.38,2.44c-0.66,0.47-0.84,0.84-0.56,1.59c2.34,7.13-0.94,15-7.5,18.38c-8.91,4.41-19.22-0.09-21.94-9.66 c-0.09-0.38-0.56-0.84-0.84-0.84C63.11,110.4,59.07,110.49,54.95,110.49L54.95,110.49z M55.14,104.21c4.22,0,8.44,0.19,12.66-0.09 c3.84-0.19,7.88-0.56,11.63-1.5c29.82-7.31,45.76-40.23,32.72-68.07C104.27,17.76,90.77,8.19,72.3,6.22 c-14.16-1.5-26.82,2.72-37.51,12.28c-10.5,9.47-15.94,21.28-16.31,35.44c-0.09,3.28,0,6.66,0,9.94 C18.38,71.02,14.35,76.55,7.5,78.7c-0.09,0-0.28,0.19-0.38,0.19c2.63,6.94,13.31,17.16,19.97,19.69 C35.45,87.14,52.32,91.18,55.14,104.21L55.14,104.21z"/><path d="M74.92,79.74c-11.07-0.56-18.38-4.97-23.07-13.78c-1.13-2.16-0.09-4.31,2.06-4.78c1.31-0.28,2.53,0.66,3.47,2.16 c1.22,1.88,2.44,3.75,4.03,5.25c8.81,8.34,23.25,5.72,28.79-5.06c0.66-1.31,1.5-2.34,3.09-2.34c2.34,0.09,3.66,2.44,2.63,4.59 c-2.91,5.91-7.5,10.22-13.69,12.28C79.51,78.99,76.7,79.36,74.92,79.74L74.92,79.74z"/><path d="M55.32,48.98c-3.38,0-6.09-2.72-6.09-6.09s2.72-6.09,6.09-6.09s6.09,2.72,6.09,6.09C61.42,46.17,58.7,48.98,55.32,48.98 L55.32,48.98z"/><path d="M98.27,42.79c0,3.38-2.72,6.09-6,6.19c-3.38,0-6.09-2.63-6.09-6.09c0-3.38,2.63-6.09,6-6.19 C95.46,36.7,98.17,39.42,98.27,42.79L98.27,42.79z"/></g></svg>`;
-        const svgExt = `<?xml version="1.0" encoding="utf-8"?><svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="20" height="20" viewBox="0 0 112.55 122.88" style="enable-background:new 0 0 112.55 122.88" xml:space="preserve"><style type="text/css">.st0{fill-rule:evenodd;clip-rule:evenodd;}</style><g><path class="st0" d="M104.41,6.1c6.26,5.13,6.93,11.83,7.62,13.46l0.34,2.5c0.9,5.39-1.65,12.75-5.58,17.38L89.2,59.84 c-6.76,7.84-18.04,10.44-27.48,6.37l-0.03,0.04c3.45,5.63,3.15,9.64,3.46,10.57c0.9,5.41-1.65,12.74-5.58,17.38L41.97,114.6 c-8.53,9.89-23.58,11.1-33.53,2.61c-5.04-5.04-7.84-9.31-8.37-16.49c-0.47-6.24,1.53-12.37,5.59-17.18l17.92-20.79 c5.01-5.14,7.5-5.86,13.33-7.47l2.5-0.34l10.66,1.56c0.22,0.08,0.44,0.18,0.65,0.27l0.03-0.04c-5.35-8.71-4.57-20.11,2.14-27.97 L70.48,8.37c4.11-4.77,9.99-7.71,16.15-8.19c5.37-0.89,12.77,1.64,17.38,5.58L104.41,6.1L104.41,6.1z M74.23,51.71l-3.66,4.24 l0.64,0.01l0.02,0l0.6-0.02l0.01,0l0.14-0.01l0.02,0c2.11-0.16,4.19-0.88,5.96-2.14c0.34-0.24,0.68-0.51,1.02-0.82l0,0l0,0 c0.3-0.27,0.62-0.59,0.93-0.95l0,0l0.12-0.13l17.45-20.24c1.47-1.7,2.36-3.75,2.68-5.86c0.07-0.44,0.11-0.87,0.13-1.26 c0.02-0.41,0.01-0.85-0.01-1.28l0-0.05l-0.01-0.11c-0.16-2.11-0.88-4.19-2.14-5.96c-0.24-0.34-0.51-0.67-0.78-0.97l-0.03-0.04 c-0.29-0.32-0.61-0.64-0.94-0.94l0,0l-0.06-0.05l-0.05-0.05L96.16,15c-1.69-1.43-3.7-2.3-5.78-2.61l-0.03,0 c-0.43-0.06-0.85-0.11-1.24-0.12c-0.41-0.02-0.84-0.01-1.27,0.01l-0.07,0l-0.1,0.01c-2.11,0.16-4.19,0.88-5.96,2.14 c-0.34,0.24-0.68,0.51-0.98,0.78l-0.03,0.03c-0.33,0.29-0.64,0.61-0.94,0.95l0,0l-0.12,0.13L62.2,36.55 c-1.47,1.7-2.36,3.75-2.68,5.86h0c-0.06,0.43-0.11,0.86-0.12,1.26c-0.02,0.41-0.01,0.85,0.01,1.28l0.01,0.15l0,0.01v0.02 c0.03,0.46,0.09,0.91,0.18,1.37l3.58-4.15l0.1-0.12l0.13-0.14l0,0l0.02-0.02c1.29-1.39,3.02-2.18,4.79-2.3 c1.78-0.13,3.62,0.39,5.1,1.6l0,0l0.02,0.01l0.09,0.08l0.02,0.02l0.02,0.02l0.01,0.01l0.02,0.01l0.07,0.06l0,0l0,0 c2.06,1.83,2.82,4.6,2.21,7.13c-0.12,0.5-0.3,1-0.54,1.48c-0.22,0.46-0.51,0.9-0.83,1.31l-0.02,0.02l-0.03,0.04l0,0l-0.01,0.02 l-0.1,0.12l0,0L74.23,51.71L74.23,51.71z M40.06,80.23L40.06,80.23c2.33,2.01,5.88,1.75,7.89-0.58l5.58-6.47 c0.65,1.45,1.04,3,1.16,4.57c0.25,3.44-0.79,6.97-3.19,9.75l-17.46,20.24c-2.4,2.79-5.73,4.34-9.16,4.59 c-3.38,0.25-6.84-0.75-9.59-3.05l-0.16-0.14c-2.78-2.4-4.34-5.73-4.59-9.16c-0.25-3.4,0.76-6.89,3.1-9.65l0.09-0.1l17.25-20l0,0 l0,0l0.21-0.24c2.4-2.78,5.73-4.34,9.16-4.59c1.58-0.12,3.18,0.04,4.71,0.47l-5.58,6.47C37.47,74.67,37.73,78.22,40.06,80.23 L40.06,80.23z"/></g></svg>`;
-        const svgIcon = `<?xml version="1.0" encoding="utf-8"?><svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="30" height="30" viewBox="0 0 109.69 122.88" style="enable-background:new 0 0 109.69 122.88" xml:space="preserve"><style type="text/css">.st0{fill-rule:evenodd;clip-rule:evenodd;}</style><g><path class="st0" d="M101.41,37.05c-1.95,2.14-4.22,4.05-6.77,5.6c-0.31,0.23-0.74,0.26-1.09,0.03c-3.76-2.39-6.93-5.27-9.41-8.4 c-3.43-4.3-5.59-9.07-6.33-13.66c-0.75-4.66-0.05-9.14,2.27-12.79C81,6.4,82.17,5.08,83.59,3.95c3.27-2.6,7-3.98,10.73-3.95 c3.58,0.03,7.12,1.36,10.18,4.15c1.08,0.98,1.98,2.09,2.72,3.31c2.49,4.11,3.03,9.34,1.93,14.65 C108.07,27.36,105.39,32.69,101.41,37.05L101.41,37.05L101.41,37.05z M23.88,92.06c-1.95,2.14-4.22,4.05-6.77,5.6 c-0.31,0.23-0.74,0.26-1.09,0.03c-3.76-2.4-6.93-5.27-9.41-8.4C3.19,85,1.03,80.23,0.29,75.63c-0.75-4.66-0.05-9.14,2.27-12.78 c0.91-1.44,2.08-2.75,3.51-3.88c3.27-2.6,7-3.98,10.72-3.95c3.58,0.03,7.12,1.36,10.18,4.15c1.08,0.98,1.98,2.09,2.72,3.31 c2.49,4.11,3.03,9.34,1.93,14.65C30.54,82.37,27.86,87.7,23.88,92.06L23.88,92.06L23.88,92.06z M17.07,103.04 c4.51,0,8.32,3.02,9.52,7.14h59.97c2.96,0,5.66-1.21,7.62-3.17c1.96-1.96,3.17-4.65,3.17-7.62l0,0c0-2.96-1.21-5.66-3.17-7.62 c-1.96-1.96-4.65-3.17-7.62-3.17H65.58v0c-4.71,0-8.99-1.92-12.09-5.02c-3.1-3.1-5.02-7.38-5.02-12.09l0,0 c0-4.71,1.92-8.99,5.02-12.09c3.1-3.1,7.38-5.02,12.09-5.02h18.97c1.3-3.96,5.03-6.82,9.42-6.82c5.48,0,9.92,4.44,9.92,9.92 c0,5.48-4.44,9.92-9.92,9.92c-4.35,0-8.04-2.8-9.38-6.69H65.58c-2.96,0-5.66,1.21-7.62,3.17c-1.96,1.96-3.17,4.65-3.17,7.62l0,0 c0,2.96,1.21,5.66,3.17,7.62c1.94,1.94,4.61,3.15,7.55,3.17v0h21.06c4.71,0,8.99,1.92,12.09,5.02c3.1,3.1,5.02,7.38,5.02,12.09l0,0 c0,4.71-1.92,8.99-5.02,12.09c-3.1,3.1-7.38,5.02-12.09,5.02H26.34c-1.43,3.73-5.04,6.37-9.27,6.37c-5.48,0-9.92-4.44-9.92-9.92 C7.15,107.48,11.59,103.04,17.07,103.04L17.07,103.04z M16.08,63.3c4.42,0,8,3.58,8,8c0,4.42-3.58,8-8,8c-4.42,0-8-3.58-8-8 C8.08,66.88,11.66,63.3,16.08,63.3L16.08,63.3z M93.61,8.28c4.42,0,8,3.58,8,8c0,4.42-3.58,8-8,8c-4.42,0-8-3.58-8-8 C85.61,11.86,89.19,8.28,93.61,8.28L93.61,8.28z"/></g></svg>`;
+        const svgGm = `<?xml version="1.0" encoding="utf-8"?><svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="20" height="20" viewBox="0 0 92.25 122.88" style="enable-background:new 0 0 92.25 122.88" xml:space="preserve"><style type="text/css"><![CDATA[.st0{fill:#FF6467;}]]></style><g><path class="st0" d="M68.51,106.28c-5.59,6.13-12.1,11.62-19.41,16.06c-0.9,0.66-2.12,0.74-3.12,0.1 c-10.8-6.87-19.87-15.12-27-24.09C9.14,86.01,2.95,72.33,0.83,59.15c-2.16-13.36-0.14-26.22,6.51-36.67 c2.62-4.13,5.97-7.89,10.05-11.14C26.77,3.87,37.48-0.08,48.16,0c10.28,0.08,20.43,3.91,29.2,11.92c3.08,2.8,5.67,6.01,7.79,9.49 c7.15,11.78,8.69,26.8,5.55,42.02c-3.1,15.04-10.8,30.32-22.19,42.82V106.28L68.51,106.28z M46.12,23.76 c12.68,0,22.95,10.28,22.95,22.95c0,12.68-10.28,22.95-22.95,22.95c-12.68,0-22.95-10.27-22.95-22.95 C23.16,34.03,33.44,23.76,46.12,23.76L46.12,23.76z"/></g></svg>`;
+        const svgWz = `<?xml version="1.0" encoding="utf-8"?><svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="20" height="20" viewBox="0 0 122.71 122.88" style="enable-background:new 0 0 122.71 122.88" xml:space="preserve"><style type="text/css"><![CDATA[.st1{fill:#71D1E5;}]]></style><g><path class="st1" d="M55.14,104.21c4.22,0,8.44,0.19,12.66-0.09c3.84-0.19,7.88-0.56,11.63-1.5c29.82-7.31,45.76-40.23,32.72-68.07 C104.27,17.76,90.77,8.19,72.3,6.22c-14.16-1.5-26.82,2.72-37.51,12.28c-10.5,9.47-15.94,21.28-16.31,35.44 c-0.09,3.28,0,6.66,0,9.94C18.38,71.02,14.35,76.55,7.5,78.7c-0.09,0-0.28,0.19-0.38,0.19c2.63,6.94,13.31,17.16,19.97,19.69 C35.45,87.14,52.32,91.18,55.14,104.21L55.14,104.21z"/><path d="M54.95,110.49c-1.03,4.69-3.56,8.16-7.69,10.31c-5.25,2.72-10.6,2.63-15.57-0.56c-5.16-3.28-7.41-8.25-7.03-14.35 c0.09-1.03-0.19-1.41-1.03-1.88c-9.1-4.78-16.31-11.44-21.28-20.44c-0.94-1.78-1.69-3.66-2.16-5.63c-0.66-2.72,0.38-4.03,3.19-4.31 c3.38-0.38,6.38-1.69,7.88-4.88c0.66-1.41,1.03-3.09,1.03-4.69c0.19-4.03,0-8.06,0.19-12.1c1.03-15.57,7.5-28.5,19.32-38.63 C42.67,3.97,55.42-0.43,69.76,0.03c25.04,0.94,46.51,18.57,51.57,43.23c4.59,22.32-2.34,40.98-20.07,55.51 c-1.03,0.84-2.16,1.69-3.38,2.44c-0.66,0.47-0.84,0.84-0.56,1.59c2.34,7.13-0.94,15-7.5,18.38c-8.91,4.41-19.22-0.09-21.94-9.66 c-0.09-0.38-0.56-0.84-0.84-0.84C63.11,110.4,59.07,110.49,54.95,110.49L54.95,110.49z M55.14,104.21c4.22,0,8.44,0.19,12.66-0.09 c3.84-0.19,7.88-0.56,11.63-1.5c29.82-7.31,45.76-40.23,32.72-68.07C104.27,17.76,90.77,8.19,72.3,6.22 c-14.16-1.5-26.82,2.72-37.51,12.28c-10.5,9.47-15.94,21.28-16.31,35.44c-0.09,3.28,0,6.66,0,9.94 C18.38,71.02,14.35,76.55,7.5,78.7c-0.09,0-0.28,0.19-0.38,0.19c2.63,6.94,13.31,17.16,19.97,19.69 C35.45,87.14,52.32,91.18,55.14,104.21L55.14,104.21z"/><path d="M74.92,79.74c-11.07-0.56-18.38-4.97-23.07-13.78c-1.13-2.16-0.09-4.31,2.06-4.78c1.31-0.28,2.53,0.66,3.47,2.16 c1.22,1.88,2.44,3.75,4.03,5.25c8.81,8.34,23.25,5.72,28.79-5.06c0.66-1.31,1.5-2.34,3.09-2.34c2.34,0.09,3.66,2.44,2.63,4.59 c-2.91,5.91-7.5,10.22-13.69,12.28C79.51,78.99,76.7,79.36,74.92,79.74L74.92,79.74z"/><path d="M55.32,48.98c-3.38,0-6.09-2.72-6.09-6.09s2.72-6.09,6.09-6.09s6.09,2.72,6.09,6.09C61.42,46.17,58.7,48.98,55.32,48.98 L55.32,48.98z"/><path d="M98.27,42.79c0,3.38-2.72,6.09-6,6.19c-3.38,0-6.09-2.63-6.09-6.09c0-3.38,2.63-6.09,6-6.19 C95.46,36.7,98.17,39.42,98.27,42.79L98.27,42.79z"/></g></svg>`;
+        const svgExt = `<?xml version="1.0" encoding="utf-8"?><svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="20" height="20" viewBox="0 0 112.55 122.88" style="enable-background:new 0 0 112.55 122.88" xml:space="preserve"><style type="text/css"><![CDATA[.st2{fill:#11D115;}]]></style><g><path class="st2" d="M104.41,6.1c6.26,5.13,6.93,11.83,7.62,13.46l0.34,2.5c0.9,5.39-1.65,12.75-5.58,17.38L89.2,59.84 c-6.76,7.84-18.04,10.44-27.48,6.37l-0.03,0.04c3.45,5.63,3.15,9.64,3.46,10.57c0.9,5.41-1.65,12.74-5.58,17.38L41.97,114.6 c-8.53,9.89-23.58,11.1-33.53,2.61c-5.04-5.04-7.84-9.31-8.37-16.49c-0.47-6.24,1.53-12.37,5.59-17.18l17.92-20.79 c5.01-5.14,7.5-5.86,13.33-7.47l2.5-0.34l10.66,1.56c0.22,0.08,0.44,0.18,0.65,0.27l0.03-0.04c-5.35-8.71-4.57-20.11,2.14-27.97 L70.48,8.37c4.11-4.77,9.99-7.71,16.15-8.19c5.37-0.89,12.77,1.64,17.38,5.58L104.41,6.1L104.41,6.1z M74.23,51.71l-3.66,4.24 l0.64,0.01l0.02,0l0.6-0.02l0.01,0l0.14-0.01l0.02,0c2.11-0.16,4.19-0.88,5.96-2.14c0.34-0.24,0.68-0.51,1.02-0.82l0,0l0,0 c0.3-0.27,0.62-0.59,0.93-0.95l0,0l0.12-0.13l17.45-20.24c1.47-1.7,2.36-3.75,2.68-5.86c0.07-0.44,0.11-0.87,0.13-1.26 c0.02-0.41,0.01-0.85-0.01-1.28l0-0.05l-0.01-0.11c-0.16-2.11-0.88-4.19-2.14-5.96c-0.24-0.34-0.51-0.67-0.78-0.97l-0.03-0.04 c-0.29-0.32-0.61-0.64-0.94-0.94l0,0l-0.06-0.05l-0.05-0.05L96.16,15c-1.69-1.43-3.7-2.3-5.78-2.61l-0.03,0 c-0.43-0.06-0.85-0.11-1.24-0.12c-0.41-0.02-0.84-0.01-1.27,0.01l-0.07,0l-0.1,0.01c-2.11,0.16-4.19,0.88-5.96,2.14 c-0.34,0.24-0.68,0.51-0.98,0.78l-0.03,0.03c-0.33,0.29-0.64,0.61-0.94,0.95l0,0l-0.12,0.13L62.2,36.55 c-1.47,1.7-2.36,3.75-2.68,5.86h0c-0.06,0.43-0.11,0.86-0.12,1.26c-0.02,0.41-0.01,0.85,0.01,1.28l0.01,0.15l0,0.01v0.02 c0.03,0.46,0.09,0.91,0.18,1.37l3.58-4.15l0.1-0.12l0.13-0.14l0,0l0.02-0.02c1.29-1.39,3.02-2.18,4.79-2.3 c1.78-0.13,3.62,0.39,5.1,1.6l0,0l0.02,0.01l0.09,0.08l0.02,0.02l0.02,0.02l0.01,0.01l0.02,0.01l0.07,0.06l0,0l0,0 c2.06,1.83,2.82,4.6,2.21,7.13c-0.12,0.5-0.3,1-0.54,1.48c-0.22,0.46-0.51,0.9-0.83,1.31l-0.02,0.02l-0.03,0.04l0,0l-0.01,0.02 l-0.1,0.12l0,0L74.23,51.71L74.23,51.71z M40.06,80.23L40.06,80.23c2.33,2.01,5.88,1.75,7.89-0.58l5.58-6.47 c0.65,1.45,1.04,3,1.16,4.57c0.25,3.44-0.79,6.97-3.19,9.75l-17.46,20.24c-2.4,2.79-5.73,4.34-9.16,4.59 c-3.38,0.25-6.84-0.75-9.59-3.05l-0.16-0.14c-2.78-2.4-4.34-5.73-4.59-9.16c-0.25-3.4,0.76-6.89,3.1-9.65l0.09-0.1l17.25-20l0,0 l0,0l0.21-0.24c2.4-2.78,5.73-4.34,9.16-4.59c1.58-0.12,3.18,0.04,4.71,0.47l-5.58,6.47C37.47,74.67,37.73,78.22,40.06,80.23 L40.06,80.23z"/></g></svg>`;
+        const svgIcon = `<?xml version="1.0" encoding="utf-8"?><svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="30" height="30" viewBox="0 0 109.69 122.88" style="enable-background:new 0 0 109.69 122.88" xml:space="preserve"><style type="text/css"><![CDATA[.st3{fill:#71D1E5;}]]></style><g><path class="st3" d="M101.41,37.05c-1.95,2.14-4.22,4.05-6.77,5.6c-0.31,0.23-0.74,0.26-1.09,0.03c-3.76-2.39-6.93-5.27-9.41-8.4 c-3.43-4.3-5.59-9.07-6.33-13.66c-0.75-4.66-0.05-9.14,2.27-12.79C81,6.4,82.17,5.08,83.59,3.95c3.27-2.6,7-3.98,10.73-3.95 c3.58,0.03,7.12,1.36,10.18,4.15c1.08,0.98,1.98,2.09,2.72,3.31c2.49,4.11,3.03,9.34,1.93,14.65 C108.07,27.36,105.39,32.69,101.41,37.05L101.41,37.05L101.41,37.05z M23.88,92.06c-1.95,2.14-4.22,4.05-6.77,5.6 c-0.31,0.23-0.74,0.26-1.09,0.03c-3.76-2.4-6.93-5.27-9.41-8.4C3.19,85,1.03,80.23,0.29,75.63c-0.75-4.66-0.05-9.14,2.27-12.78 c0.91-1.44,2.08-2.75,3.51-3.88c3.27-2.6,7-3.98,10.72-3.95c3.58,0.03,7.12,1.36,10.18,4.15c1.08,0.98,1.98,2.09,2.72,3.31 c2.49,4.11,3.03,9.34,1.93,14.65C30.54,82.37,27.86,87.7,23.88,92.06L23.88,92.06L23.88,92.06z M17.07,103.04 c4.51,0,8.32,3.02,9.52,7.14h59.97c2.96,0,5.66-1.21,7.62-3.17c1.96-1.96,3.17-4.65,3.17-7.62l0,0c0-2.96-1.21-5.66-3.17-7.62 c-1.96-1.96-4.65-3.17-7.62-3.17H65.58v0c-4.71,0-8.99-1.92-12.09-5.02c-3.1-3.1-5.02-7.38-5.02-12.09l0,0 c0-4.71,1.92-8.99,5.02-12.09c3.1-3.1,7.38-5.02,12.09-5.02h18.97c1.3-3.96,5.03-6.82,9.42-6.82c5.48,0,9.92,4.44,9.92,9.92 c0,5.48-4.44,9.92-9.92,9.92c-4.35,0-8.04-2.8-9.38-6.69H65.58c-2.96,0-5.66,1.21-7.62,3.17c-1.96,1.96-3.17,4.65-3.17,7.62l0,0 c0,2.96,1.21,5.66,3.17,7.62c1.94,1.94,4.61,3.15,7.55,3.17v0h21.06c4.71,0,8.99,1.92,12.09,5.02c3.1,3.1,5.02,7.38,5.02,12.09l0,0 c0,4.71-1.92,8.99-5.02,12.09c-3.1,3.1-7.38,5.02-12.09,5.02H26.34c-1.43,3.73-5.04,6.37-9.27,6.37c-5.48,0-9.92-4.44-9.92-9.92 C7.15,107.48,11.59,103.04,17.07,103.04L17.07,103.04z M16.08,63.3c4.42,0,8,3.58,8,8c0,4.42-3.58,8-8,8c-4.42,0-8-3.58-8-8 C8.08,66.88,11.66,63.3,16.08,63.3L16.08,63.3z M93.61,8.28c4.42,0,8,3.58,8,8c0,4.42-3.58,8-8,8c-4.42,0-8-3.58-8-8 C85.61,11.86,89.19,8.28,93.61,8.28L93.61,8.28z"/></g></svg>`;
         
     // Build HTML content
     // include trip metadata (name/description) when available
@@ -1328,9 +1460,9 @@
                     const [lat, lng] = a.coordinates || [0,0];
                     const gm = `https://www.google.com/maps?q=${lat},${lng}`;
                     const wz = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
-                    const urlHtml = a.url ? `<a href="${a.url}" target="_blank" rel="noopener">${svgExt}</a>` : '';
+                    const urlHtml = a.url ? `<a href="${a.url}" target="_blank" rel="noopener">${svgExt}</a>` : '<span style="width:20px;height:20px;display:inline-block;"></span>';
                     const timeHtml = a.time ? `<span>(${a.time})</span>` : '';
-                    const commentsHtml = a.comments ? `<div class="attr-comments" style="background:#22223b;color:#f1f1f1;padding:6px 10px;border-radius:6px;margin-top:4px;white-space:pre-line;font-size:15px;">${a.comments.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>` : '';
+                    const commentsHtml = a.comments ? `<div class="attr-comments">${a.comments.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>` : '';
                     bodyHtml += `<div class="attr">
                                     <div class="attr-header">
                                         <strong>${timeHtml}</strong>${a.name || ''}
@@ -1340,8 +1472,8 @@
                                         <a href="${wz}" target="_blank" rel="noopener">${svgWz}</a>
                                         ${urlHtml}
                                     </div>
-                                    ${commentsHtml}
-                                </div>`;
+                                </div>
+                                ${commentsHtml}`;
                 });
             } else {
                 bodyHtml += `<div class="attr">אין אטרקציות</div>`;
@@ -1350,9 +1482,9 @@
         });
 
         // Compose full HTML
-        const full = `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>מסלוליק - יצוא סטטי</title><style>${css}</style></head><body>${bodyHtml}</body></html>`;
+        const full = `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>מסלוליק - תוכנית טיול</title><style>${css}</style></head><body>${bodyHtml}</body></html>`;
         const blob = new Blob([full], {type:'text/html'});
-        const url2 = URL.createObjectURL(blob); const a2 = document.createElement('a'); a2.href = url2; a2.download = 'trip_static.html'; a2.click(); URL.revokeObjectURL(url2); showToast('הייצוא הושלם!');
+        const url2 = URL.createObjectURL(blob); const a2 = document.createElement('a'); a2.href = url2; a2.download = 'trip_plan.html'; a2.click(); URL.revokeObjectURL(url2); showToast('הייצוא הושלם!');
     }
 
     // Wire export button
@@ -1376,7 +1508,48 @@
     function init_map() {
         if (!map)
         {
-            map = L.map('map').setView([20,0],2); baseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18, attribution:'© OpenStreetMap contributors' }).addTo(map);
+            map = L.map('map').setView([20,0],2);
+            // Default base layer (OSM)
+            window.osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18, attribution:'© OpenStreetMap contributors' });
+            // Satellite layer (ESRI)
+            window.satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 18,
+            });
+            // Layer control (built-in Leaflet)
+            // Load saved map type preference (defaults to 'standard')
+            const LS_MAPTYPE_KEY = 'msl_map_type';
+            let saved = null;
+            try { saved = localStorage.getItem(LS_MAPTYPE_KEY); } catch (e) { saved = null; }
+            // Ensure `baseLayer` references the currently active base so other code preserves it
+            if (saved === 'satellite') {
+                baseLayer = window.satelliteLayer;
+            } else {
+                baseLayer = window.osmLayer;
+            }
+            // Add active base to map
+            if (baseLayer && !map.hasLayer(baseLayer)) baseLayer.addTo(map);
+            // Build baseMaps after layers are created
+            const baseMaps = {
+                "מפה": window.osmLayer,
+                "לוויין": window.satelliteLayer
+            };
+            const layersControl = L.control.layers(baseMaps, {}, { position: 'topleft', collapsed: false }).addTo(map);
+            // Persist selection when user changes base layer (check layer identity)
+            map.on('baselayerchange', function(e) {
+                try {
+                    if (e && e.layer === window.satelliteLayer) {
+                        localStorage.setItem(LS_MAPTYPE_KEY, 'satellite');
+                        baseLayer = window.satelliteLayer;
+                    } else if (e && e.layer === window.osmLayer) {
+                        localStorage.setItem(LS_MAPTYPE_KEY, 'standard');
+                        baseLayer = window.osmLayer;
+                    } else {
+                        // fallback: clear or set to standard
+                        localStorage.setItem(LS_MAPTYPE_KEY, 'standard');
+                        baseLayer = window.osmLayer;
+                    }
+                } catch (err) {}
+            });
         }
         map.on('contextmenu', function(e) {
             if (e.originalEvent) e.originalEvent.preventDefault();
@@ -1407,6 +1580,9 @@
     document.addEventListener('DOMContentLoaded', function() {
         const mapTab = document.getElementById('tabMap'); const editorTab = document.getElementById('tabEditor'); const mapContainer = document.getElementById('mapContainer'); const editorContainer = document.getElementById('editorContainer');
         const headerControlsEl = document.getElementById('headerControls');
+        // Store scroll position for tab switching
+        let lastEditorScroll = 0;
+        let lastMapScroll = 0;
         // Load persisted route cache and last trip from localStorage
         loadRouteCacheFromStorage();
         const storedTrip = loadTripFromStorage();
@@ -1422,8 +1598,28 @@
             loadPlaces(getDays());
             try { updateAllDayDriveLabels(); updateTripEstDriveLabel(); } catch (e) {}
         }
-    function showMap() { editorContainer.classList.add('hidden'); mapContainer.classList.remove('hidden'); if (headerControlsEl) headerControlsEl.classList.remove('hidden'); routingEnabled = true; refreshMapDebounced(200); }
-    function showEditor() { mapContainer.classList.add('hidden'); editorContainer.classList.remove('hidden'); if (headerControlsEl) headerControlsEl.classList.add('hidden'); routingEnabled = false; refreshMapDebounced(0); }
+    function showMap() {
+        // Save editor scroll position before hiding
+        lastEditorScroll = window.scrollY;
+        editorContainer.classList.add('hidden');
+        mapContainer.classList.remove('hidden');
+        if (headerControlsEl) headerControlsEl.classList.remove('hidden');
+        routingEnabled = true;
+        refreshMapDebounced(200);
+        // Restore map scroll position
+        setTimeout(() => { window.scrollTo(0, lastMapScroll || 0); }, 0);
+    }
+    function showEditor() {
+        // Save map scroll position before hiding
+        lastMapScroll = window.scrollY;
+        mapContainer.classList.add('hidden');
+        editorContainer.classList.remove('hidden');
+        if (headerControlsEl) headerControlsEl.classList.add('hidden');
+        routingEnabled = false;
+        refreshMapDebounced(0);
+        // Restore editor scroll position
+        setTimeout(() => { window.scrollTo(0, lastEditorScroll || 0); }, 0);
+    }
     mapTab.onclick = showMap; editorTab.onclick = showEditor; // default: show map
     // Initialize map once (world view)
     init_map();
@@ -1554,7 +1750,6 @@
                     if (tName) tName.value = (tr && tr.name) ? tr.name : '';
                     if (tDesc) tDesc.value = (tr && tr.description) ? tr.description : '';
                 } catch (e) {}
-                try { updateTripEstDriveLabel(); } catch (e) {}
             }
             // simple debounce utility
             function debounce(fn, wait) { let t=null; return function(...args){ if (t) clearTimeout(t); t=setTimeout(()=>{ t=null; fn.apply(this,args); }, wait); }; }
