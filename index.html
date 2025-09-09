@@ -118,6 +118,7 @@
                             <div class="flex bg-gray-800 text-gray-300 rounded mr-4">
                                 <input id="tripDescInput" type="text" placeholder="תיאור קצר" class="input w-128 px-2 py-1 rounded border">
                             </div>
+                            <div id="tripEstDrive" class="px-3 py-1 text-sm text-gray-300">משך נהיגה: 0 שעות</div>
                         </div>
                         <input
                             type="file"
@@ -498,7 +499,7 @@
     function updateTripEstDriveLabel() {
         try {
             const el = document.getElementById('tripEstDrive');
-            if (!el) { el.textContent = `משך נהיגה: 0 שעות`; return; }
+            if (!el) return;
             const mins = estimateTripDriveTimeMinutes(getDays());
             if (!mins) { el.textContent = `משך נהיגה: 0 שעות`; return; }
             const h = Math.floor(mins / 60); const m = mins % 60;
@@ -508,11 +509,32 @@
 
     function updateAllDayDriveLabels() {
         try {
-            const days = getDays(); if (!Array.isArray(days)) { el.textContent = `משך נהיגה: 0 שעות`; return; };
+            const days = getDays(); if (!Array.isArray(days)) return;
             days.forEach((d, idx) => {
                 const el = document.getElementById('dayDrive-' + idx);
-                if (!el) { el.textContent = `משך נהיגה: 0 שעות`; return; }
-                const mins = estimateDayDriveMinutes(d);
+                if (!el) return;
+                // within-day minutes
+                let mins = estimateDayDriveMinutes(d) || 0;
+                // add previous-day last->current first when available
+                try {
+                    if (idx > 0) {
+                        const prev = days[idx-1];
+                        const prevLast = (prev && Array.isArray(prev.attractions) && prev.attractions.length) ? prev.attractions[prev.attractions.length-1] : null;
+                        const currFirst = (d && Array.isArray(d.attractions) && d.attractions.length) ? d.attractions[0] : null;
+                        if (prevLast && currFirst && prevLast.coordinates && currFirst.coordinates) {
+                            const lat1 = Number(prevLast.coordinates[0]), lng1 = Number(prevLast.coordinates[1]);
+                            const lat2 = Number(currFirst.coordinates[0]), lng2 = Number(currFirst.coordinates[1]);
+                            if (isFinite(lat1) && isFinite(lng1) && isFinite(lat2) && isFinite(lng2)) {
+                                const cached = getCachedRouteDurationMinutesFromStorage(lat1,lng1,lat2,lng2);
+                                if (cached !== null) mins += cached;
+                                else {
+                                    const km = haversineKm(lat1,lng1,lat2,lng2);
+                                    mins += Math.round((km / 50) * 60); // avgKph=50
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {}
                 if (!mins) { el.textContent = `משך נהיגה: 0 שעות`; return; }
                 const h = Math.floor(mins/60), m = mins % 60;
                 el.textContent = `משך נהיגה: ${h} שעות ו ${m} דקות`;
@@ -951,7 +973,7 @@
                         <button class="toggle-day-state px-2 py-1 rounded ${dayObj.state === 'complete' ? 'bg-green-500 text-green-900' : 'bg-gray-900 text-white'}" title="סמן יום כ'הושלם'" data-day-idx="${dayIdx}">
                             <i class="fa-solid fa-check"></i>
                         </button>
-                        
+                        <div id="dayDrive-${dayIdx}" class="text-sm text-gray-300">משך נהיגה: 0 שעות</div>
                     </div>
                     <div class="space-y-2" id="attractions-${dayIdx}"></div>
                     <div class="flex gap-2 mt-2">
@@ -991,6 +1013,7 @@
                         <button class="toggle-day-state px-2 py-1 rounded ${dayObj.state === 'complete' ? 'bg-green-500 text-green-900' : 'bg-gray-900 text-white'}" title="סמן יום כ'הושלם'" data-day-idx="${dayIdx}">
                             <i class="fa-solid fa-check"></i>
                         </button>
+                        <div id="dayDrive-${dayIdx}" class="text-sm text-gray-300">משך נהיגה: 0 שעות</div>
                     </div>
                     <div class="space-y-2" id="attractions-${dayIdx}"></div>
                     <div class="flex gap-2 mt-2">
