@@ -581,8 +581,17 @@
         data.forEach((dayObj, i) => {
             if (!selectedDays[i]) return;
             const color = dayColors[i % dayColors.length];
-            // Only enabled attractions
-            const enabledAttractions = dayObj.attractions.filter(attr => attr.enabled !== false);
+            // Only enabled attractions that have valid coordinates and are not the placeholder 0,0
+            const enabledAttractions = Array.isArray(dayObj.attractions) ? dayObj.attractions.filter(attr => {
+                if (!attr || attr.enabled === false) return false;
+                const coords = attr.coordinates;
+                if (!Array.isArray(coords) || coords.length < 2) return false;
+                const lat = Number(coords[0]); const lng = Number(coords[1]);
+                if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+                // treat 0,0 as 'no coordinates' and skip it (same as disabled)
+                if (lat === 0 && lng === 0) return false;
+                return true;
+            }) : [];
             enabledAttractions.forEach((attraction, j) => {
                 const [lat, lng] = attraction.coordinates;
                 const marker = L.circleMarker([lat, lng], { color: (j === 0) ? 'black' : color, fillColor: color, fillOpacity: 0.8, radius: 6, weight: (j === 0) ? 2 : 1 }).addTo(map);
@@ -602,8 +611,27 @@
         for (let i = 0; i < data.length - 1; i++) {
             // Only connect between visible days
             if (!selectedDays[i] || !selectedDays[i+1]) continue;
-            const lastAttr = data[i].attractions[data[i].attractions.length - 1];
-            const nextFirstAttr = data[i+1].attractions[0];
+            // find last valid attraction in day i and first valid in day i+1 (skip coords that are missing or 0,0)
+            const dayA = Array.isArray(data[i].attractions) ? data[i].attractions : [];
+            const dayB = Array.isArray(data[i+1].attractions) ? data[i+1].attractions : [];
+            let lastAttr = null;
+            for (let p = dayA.length - 1; p >= 0; p--) {
+                const a = dayA[p];
+                if (!a || a.enabled === false) continue;
+                const c = a.coordinates; if (!Array.isArray(c) || c.length < 2) continue;
+                const lat = Number(c[0]), lng = Number(c[1]); if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+                if (lat === 0 && lng === 0) continue;
+                lastAttr = a; break;
+            }
+            let nextFirstAttr = null;
+            for (let q = 0; q < dayB.length; q++) {
+                const b = dayB[q];
+                if (!b || b.enabled === false) continue;
+                const c = b.coordinates; if (!Array.isArray(c) || c.length < 2) continue;
+                const lat = Number(c[0]), lng = Number(c[1]); if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+                if (lat === 0 && lng === 0) continue;
+                nextFirstAttr = b; break;
+            }
             if (lastAttr && nextFirstAttr) addRouteAndDistance(lastAttr.coordinates[0], lastAttr.coordinates[1], nextFirstAttr.coordinates[0], nextFirstAttr.coordinates[1], 'black', 1, '4 4');
         }
         // Fit map to show all attractions if any coordinates were collected
