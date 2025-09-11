@@ -333,7 +333,8 @@
                         const price = (typeof a.price === 'string') ? a.price : (Number.isFinite(a.price) ? String(a.price) : '');
                         const comments = typeof a.comments === 'string' ? a.comments : '';
                         const enabled = (typeof a.enabled === 'boolean') ? a.enabled : true;
-                        dayObj.attractions.push({ name: name, coordinates: [lat, lng], url: url, time: time, price: price, comments: comments, enabled: enabled });
+                        const image = (typeof a.image === 'string') ? a.image : '';
+                        dayObj.attractions.push({ name: name, coordinates: [lat, lng], url: url, time: time, price: price, comments: comments, enabled: enabled, image: image });
                     }
                 }
                 sanitized.push(dayObj);
@@ -1038,6 +1039,11 @@
                 <button class="text-red-400 hover:text-red-600 location-btn" title="מפה"><i class="fa-solid fa-location-dot"></i></button>
                 <button class="text-sky-300 hover:text-sky-300 waze-btn" title="Waze"><i class="fa-brands fa-waze"></i></button>
                 <button class="text-green-400 hover:text-green-600 url-btn" title="קישור"><i class="fa-solid fa-link"></i></button>
+                <div class="flex items-center gap-2" style="min-width:120px;">
+                    <button class="preview-image-btn ${attr.image ? 'text-green-400' : 'text-gray-400'}" title="הצג תמונה"><i class="fa-solid fa-eye"></i></button>
+                    <input type="file" accept="image/*" class="attr-image-input" style="display:none" />
+                    <button class="text-indigo-300 upload-image-btn" title="העלה תמונה"><i class="fa-solid fa-upload"></i></button>
+                </div>
                 <button class="text-orange-300 hover:text-orange-100 copy-attr-btn" title="העתק פעילות" onclick="copyAttractionToClipboard(${dayIdx},${attrIdx})"><i class="fa-solid fa-copy"></i></button>
                 <button class="text-red-400 hover:text-red-600" title="מחק פעילות" onclick="deleteAttraction(${dayIdx},${attrIdx})"><i class="fa-solid fa-trash"></i></button>
             `;
@@ -1093,6 +1099,38 @@
                 const locationBtn = attrDiv.querySelector('.location-btn'); if (locationBtn) locationBtn.onclick = function() { if(attr.coordinates) onLocationClick(attr.coordinates[0], attr.coordinates[1]); };
                 const wazeBtn = attrDiv.querySelector('.waze-btn'); if (wazeBtn) wazeBtn.onclick = function() { if(attr.coordinates) onWazeClick(attr.coordinates[0], attr.coordinates[1]); };
                 const urlBtn = attrDiv.querySelector('.url-btn'); if (urlBtn) urlBtn.onclick = function() { onUrlClick(attr.url); };
+                // Image upload + preview handlers
+                const uploadBtn = attrDiv.querySelector('.upload-image-btn');
+                const fileInput = attrDiv.querySelector('.attr-image-input');
+                const previewBtn = attrDiv.querySelector('.preview-image-btn');
+                if (uploadBtn && fileInput) {
+                    uploadBtn.onclick = function(e) { e.stopPropagation(); fileInput.click(); };
+                    fileInput.onchange = function(e) {
+                        const f = e.target.files && e.target.files[0];
+                        if (!f) return;
+                        const reader = new FileReader();
+                        reader.onload = function(ev) {
+                            try {
+                                const dataUrl = ev.target.result;
+                                const days = getDays();
+                                days[dayIdx].attractions[attrIdx].image = dataUrl;
+                                setDays(days);
+                                saveTripToStorageDebounced();
+                                renderEditor();
+                            } catch (err) {}
+                        };
+                        reader.readAsDataURL(f);
+                    };
+                }
+                if (previewBtn) {
+                    previewBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        const days = getDays();
+                        const img = days[dayIdx] && days[dayIdx].attractions && days[dayIdx].attractions[attrIdx] ? days[dayIdx].attractions[attrIdx].image : '';
+                        if (!img) return; // nothing to show
+                        showImageModal(dayIdx, attrIdx, img);
+                    };
+                }
                 // Auto-select coordinates input on focus/click
                 const coordInput = attrDiv.querySelector('.coordinates');
                 if (coordInput) {
@@ -1158,7 +1196,8 @@
     function onUrlClick(url) { if (url && typeof url === 'string' && url.trim()) window.open(url, '_blank'); }
     window.addDay = function() { const days = getDays(); const nextDay = days && days.length ? days[days.length-1].day+1 : 1; days.push({day: nextDay, dow:'', attractions:[], state:'in-progress', color: undefined, colorA: undefined, colorB: undefined}); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
     window.deleteDay = function(dayIdx) { showConfirmModal('למחוק את היום הזה?', function(confirmed) { if (confirmed) { const days = getDays(); days.splice(dayIdx,1); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); } }); }
-    window.addAttraction = function(dayIdx) { const days = getDays(); if (!days[dayIdx].attractions) days[dayIdx].attractions = []; days[dayIdx].attractions.push({name:'',coordinates:[0,0],time:'',price:'',comments:''}); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
+    window.addAttraction = function(dayIdx) { const days = getDays(); if (!days[dayIdx].attractions) days[dayIdx].attractions = []; days[dayIdx].attractions.push({name:'',coordinates:[0,0],time:'',price:'',comments:'',image:''}); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); }
+
     window.deleteAttraction = function(dayIdx, attrIdx) { showConfirmModal('למחוק את הפעילות?', function(confirmed) { if (confirmed) { const days = getDays(); days[dayIdx].attractions.splice(attrIdx,1); setDays(days); renderEditor(); refreshMapDebounced(); saveTripToStorageDebounced(); } }); }
     window.editAttraction = function(dayIdx, attrIdx, field, value) {
         if (field === 'coordinates') {
@@ -1308,6 +1347,51 @@
         refreshMapDebounced();
         saveTripToStorageDebounced();
     }
+    // Image modal helpers
+    function ensureImageModal() {
+        let modal = document.getElementById('imageModal');
+        if (modal) return modal;
+        modal = document.createElement('div');
+        modal.id = 'imageModal';
+        modal.style.display = 'none';
+        modal.innerHTML = `
+            <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;">
+                <div id="imageModalBox" style="background:#0b1220;padding:16px;border-radius:8px;max-width:90%;max-height:90%;overflow:auto;color:#fff;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <h3 style="margin:0;font-size:1.1rem">תמונת פעילות</h3>
+                        <button id="imageModalClose" style="background:transparent;border:none;color:#fff;font-size:1.2rem;">✕</button>
+                    </div>
+                    <div id="imageModalContent" style="text-align:center;"></div>
+                    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
+                        <button id="imageModalDelete" style="background:#c53030;color:#fff;border:none;padding:8px 12px;border-radius:6px;">מחק</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.querySelector('#imageModalClose').onclick = closeImageModal;
+        // close when clicking outside the modal box (backdrop)
+        try {
+            const box = modal.querySelector('#imageModalBox');
+            modal.addEventListener('click', function(e) {
+                if (!box) return;
+                if (!box.contains(e.target)) closeImageModal();
+            });
+        } catch (e) {}
+        return modal;
+    }
+    function showImageModal(dayIdx, attrIdx, dataUrl) {
+        const modal = ensureImageModal();
+        const content = modal.querySelector('#imageModalContent');
+        content.innerHTML = `<img src="${dataUrl}" alt="" style="max-width:100%;max-height:70vh;border-radius:6px;" />`;
+        modal.style.display = 'block';
+        // wire delete
+        const del = modal.querySelector('#imageModalDelete');
+        del.onclick = function() {
+            const days = getDays(); if (!days[dayIdx] || !days[dayIdx].attractions[attrIdx]) return; days[dayIdx].attractions[attrIdx].image = ''; setDays(days); saveTripToStorageDebounced(); renderEditor(); closeImageModal();
+        };
+    }
+    function closeImageModal() { const modal = document.getElementById('imageModal'); if (modal) modal.style.display = 'none'; }
     
     // Save/download
     document.addEventListener('click', function(e) { if (e.target && e.target.id === 'saveBtn') {
