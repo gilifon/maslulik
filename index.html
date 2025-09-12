@@ -700,6 +700,8 @@
                     <span class="cursor-move px-1 text-blue-400 order-btn" title="שנה סדר" draggable="true"><i class="fa-solid fa-bars"></i></span>
                     <button class="toggle-todo-btn ${todo.done ? 'text-green-400' : 'text-gray-400'}" title="סמן כבוצע"><i class="fa-solid fa-check"></i></button>
                     <input class="edit-todo-input w-full px-2 py-1 rounded border bg-gray-800 text-white" type="text" value="${todo.text}" />
+                    <input class="edit-todo-url w-48 px-2 py-1 rounded border bg-gray-800 text-blue-200 ml-2" type="url" placeholder="קישור..." value="${todo.url ? todo.url : ''}" />
+                    <button class="open-todo-url-btn text-green-400 hover:text-green-600 ml-1" title="פתח קישור" style="${todo.url && todo.url.trim() ? '' : 'opacity:0.3;pointer-events:none;'}"><i class="fa-solid fa-link"></i></button>
                     <button class="delete-todo-btn text-red-400 hover:text-red-600" title="מחק"><i class="fa-solid fa-trash"></i></button>
                 `;
                 // Drag and drop logic (only from handle)
@@ -744,6 +746,31 @@
                     todos[idx].text = e.target.value;
                     saveTripToStorageDebounced();
                 };
+                // Edit url
+                const urlInput = item.querySelector('.edit-todo-url');
+                const urlBtn = item.querySelector('.open-todo-url-btn');
+                urlInput.oninput = function(e) {
+                    todos[idx].url = e.target.value;
+                    // Enable/disable link icon based on value
+                    if (urlBtn) {
+                        if (e.target.value && e.target.value.trim()) {
+                            urlBtn.style.opacity = '';
+                            urlBtn.style.pointerEvents = '';
+                        } else {
+                            urlBtn.style.opacity = '0.3';
+                            urlBtn.style.pointerEvents = 'none';
+                        }
+                    }
+                };
+                urlInput.onchange = function(e) {
+                    todos[idx].url = e.target.value;
+                    saveTripToStorageDebounced();
+                };
+                // Open url
+                item.querySelector('.open-todo-url-btn').onclick = function() {
+                    const url = todos[idx].url;
+                    if (url && typeof url === 'string' && url.trim()) window.open(url, '_blank');
+                };
                 // Delete
                 item.querySelector('.delete-todo-btn').onclick = function() {
                     todos.splice(idx, 1);
@@ -771,7 +798,7 @@
             const inp = todoDiv.querySelector('#newTodoInput');
             const val = inp.value.trim();
             if (val) {
-                todos.push({ text: val, done: false });
+                todos.push({ text: val, done: false, url: '' });
                 inp.value = '';
                 saveTripToStorageDebounced();
                 renderTodos();
