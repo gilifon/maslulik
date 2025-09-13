@@ -1468,35 +1468,47 @@
     if (_trip && _trip.name) bodyHtml += `<div style="margin:10px 0"><h1 style="margin:0;color:#93c5fd;font-size:22px">${escHtml(_trip.name)}</h1></div>`;
     if (_trip && _trip.description) bodyHtml += `<div style="margin-bottom:12px;color:#cbd5e1">${escHtml(_trip.description)}</div>`;
     getDays().forEach(day => {
-            const dayColor = day.color || '#38bdf8';
-            bodyHtml += `<div class="day" style="border-color:${dayColor}"><h2>יום ${day.day}: ${(day.date ? (day.dow ? day.dow + ', ' + day.date : day.date) : (day.dow || ''))}</h2>`;
-            if (Array.isArray(day.attractions) && day.attractions.length) {
-                day.attractions.forEach(a => {
-                    const [lat, lng] = a.coordinates || [0,0];
-                    const gm = `https://www.google.com/maps?q=${lat},${lng}`;
-                    const wz = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
-                    const urlHtml = a.url ? `<a href="${a.url}" target="_blank" rel="noopener">🔗</a>` : '<span style="width:20px;height:20px;display:inline-block;"></span>';
-                    const timeHtml = a.time ? `<span>(${a.time})</span>` : '';
-                    const commentsHtml = a.comments ? `<div class="attr-comments">${a.comments.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>` : '';
-                    const imgBtnHtml = a.image ? `<button class="img-btn" data-img="${a.image.replace(/"/g,'&quot;') || ''}" title="הצג תמונה" style="background:transparent;border:none;cursor:pointer;color:#34d399">🖼️</button>` : '<span style="width:20px;height:20px;display:inline-block;"></span>';
-                    bodyHtml += `<div class="attr">
-                                    <div class="attr-header">
-                                        <strong>${timeHtml}</strong>${a.name || ''}
-                                    </div>
-                                    <div class="links">
-                                        <a href="${gm}" target="_blank" rel="noopener">📌</a>
-                                        <a href="${wz}" target="_blank" rel="noopener">🚙</a>
-                                        ${urlHtml}
-                                        ${imgBtnHtml}
-                                    </div>
+        const dayColor = day.color || '#38bdf8';
+        // Add colorA and colorB swatches and hex codes to the header
+        bodyHtml += `<div class="day" style="border-color:${dayColor}">
+            <div style="display:flex;align-items:center;gap:14px;">
+                <h2 style="margin:0;">יום ${day.day}: ${(day.date ? (day.dow ? day.dow + ', ' + day.date : day.date) : (day.dow || ''))}</h2>
+                <span style="display:flex;align-items:center;gap:8px;">
+                    <span title="ColorA" style="display:inline-flex;align-items:center;gap:2px;">
+                        <span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:${day.colorA || '#999'};border:1px solid #888;"></span>
+                    </span>
+                    <span title="ColorB" style="display:inline-flex;align-items:center;gap:2px;">
+                        <span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:${day.colorB || '#999'};border:1px solid #888;"></span>
+                    </span>
+                </span>
+            </div>`;
+        if (Array.isArray(day.attractions) && day.attractions.length) {
+            day.attractions.forEach(a => {
+                const [lat, lng] = a.coordinates || [0,0];
+                const gm = `https://www.google.com/maps?q=${lat},${lng}`;
+                const wz = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
+                const urlHtml = a.url ? `<a href="${a.url}" target="_blank" rel="noopener">🔗</a>` : '<span style="width:20px;height:20px;display:inline-block;"></span>';
+                const timeHtml = a.time ? `<span>(${a.time})</span>` : '';
+                const commentsHtml = a.comments ? `<div class="attr-comments">${a.comments.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>` : '';
+                const imgBtnHtml = a.image ? `<button class="img-btn" data-img="${a.image.replace(/"/g,'&quot;') || ''}" title="הצג תמונה" style="background:transparent;border:none;cursor:pointer;color:#34d399">🖼️</button>` : '<span style="width:20px;height:20px;display:inline-block;"></span>';
+                bodyHtml += `<div class="attr">
+                                <div class="attr-header">
+                                    <strong>${timeHtml}</strong>${a.name || ''}
                                 </div>
-                                ${commentsHtml}`;
-                });
-            } else {
-                bodyHtml += `<div class="attr">אין פעילויות</div>`;
-            }
-            bodyHtml += `</div>`;
-        });
+                                <div class="links">
+                                    <a href="${gm}" target="_blank" rel="noopener">📌</a>
+                                    <a href="${wz}" target="_blank" rel="noopener">🚙</a>
+                                    ${urlHtml}
+                                    ${imgBtnHtml}
+                                </div>
+                            </div>
+                            ${commentsHtml}`;
+            });
+        } else {
+            bodyHtml += `<div class="attr">אין פעילויות</div>`;
+        }
+        bodyHtml += `</div>`;
+    });
 
         // Compose full HTML
         // Add a simple modal and script to enable viewing images in the exported HTML
