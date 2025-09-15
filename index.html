@@ -1883,9 +1883,17 @@
                     const data = JSON.parse(evt.target.result);
                     // Accept either array (legacy) or new trip object
                     if (Array.isArray(data)) {
-                        trip = { name: '', description: '', days: data, todos: [] };
+                        trip = { name: '', description: '', days: data, todos: [], travelDocs: [], travelDocsCollapsed: false };
                     } else if (data && typeof data === 'object' && Array.isArray(data.days)) {
-                        trip = { name: data.name || '', description: data.description || '', days: data.days, todos: Array.isArray(data.todos) ? data.todos : [] };
+                        trip = {
+                            name: data.name || '',
+                            description: data.description || '',
+                            days: data.days,
+                            todos: Array.isArray(data.todos) ? data.todos : [],
+                            todosCollapsed: typeof data.todosCollapsed === 'boolean' ? data.todosCollapsed : false,
+                            travelDocs: Array.isArray(data.travelDocs) ? data.travelDocs : [],
+                            travelDocsCollapsed: typeof data.travelDocsCollapsed === 'boolean' ? data.travelDocsCollapsed : false
+                        };
                     } else {
                         showToast('קובץ לא תקין', true);
                         return;
