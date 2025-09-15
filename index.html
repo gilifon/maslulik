@@ -160,11 +160,13 @@
 
     // Helpers to access days array in the trip object
     function ensureTrip() {
-        if (!trip || typeof trip !== 'object') trip = { name: '', description: '', days: [], todos: [], todosCollapsed: false };
-        if (!Array.isArray(trip.days)) trip.days = [];
-        if (!Array.isArray(trip.todos)) trip.todos = [];
-        if (typeof trip.todosCollapsed !== 'boolean') trip.todosCollapsed = false;
-        return trip;
+    if (!trip || typeof trip !== 'object') trip = { name: '', description: '', days: [], todos: [], todosCollapsed: false, travelDocs: [], travelDocsCollapsed: false };
+    if (!Array.isArray(trip.days)) trip.days = [];
+    if (!Array.isArray(trip.todos)) trip.todos = [];
+    if (!Array.isArray(trip.travelDocs)) trip.travelDocs = [];
+    if (typeof trip.todosCollapsed !== 'boolean') trip.todosCollapsed = false;
+    if (typeof trip.travelDocsCollapsed !== 'boolean') trip.travelDocsCollapsed = false;
+    return trip;
     }
     function getDays() { ensureTrip(); return trip.days; }
     function setDays(days) { ensureTrip(); trip.days = Array.isArray(days) ? days : []; }
@@ -346,7 +348,9 @@
                 description: (parsed && typeof parsed === 'object' && typeof parsed.description === 'string') ? parsed.description : '',
                 days: sanitized,
                 todos: (parsed && typeof parsed === 'object' && Array.isArray(parsed.todos)) ? parsed.todos : [],
-                todosCollapsed: (parsed && typeof parsed === 'object' && typeof parsed.todosCollapsed === 'boolean') ? parsed.todosCollapsed : false
+                todosCollapsed: (parsed && typeof parsed === 'object' && typeof parsed.todosCollapsed === 'boolean') ? parsed.todosCollapsed : false,
+                travelDocs: (parsed && typeof parsed === 'object' && Array.isArray(parsed.travelDocs)) ? parsed.travelDocs : [],
+                travelDocsCollapsed: (parsed && typeof parsed === 'object' && typeof parsed.travelDocsCollapsed === 'boolean') ? parsed.travelDocsCollapsed : false
             };
             return tripObj;
         } catch (e) {
@@ -650,8 +654,164 @@
     function renderEditor() {
         const container = document.getElementById('editor');
         container.innerHTML = '';
-        // --- Todo List UI ---
+        // --- Travel Documents UI ---
         const tripObj = ensureTrip();
+        const travelDocs = tripObj.travelDocs;
+        const travelDocsDiv = document.createElement('div');
+        travelDocsDiv.className = 'bg-gray-900 rounded-lg p-2 shadow w-full border border-gray-600 text-gray-800 text-right mb-4';
+        if (typeof tripObj.travelDocsCollapsed !== 'boolean') tripObj.travelDocsCollapsed = false;
+        travelDocsDiv.innerHTML = `
+            <div class="travelDocsHeader flex items-center justify-between">
+                <h2 class="text-lg font-bold text-gray-200 flex items-center gap-2"><i class="fa-solid fa-file-lines"></i>מסמכי נסיעה</h2>
+                <button id="collapseTravelDocsBtn" class="text-gray-300 hover:text-orange-400 text-lg" title="הסתר/הצג"><i class="fa-solid ${tripObj.travelDocsCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'}"></i></button>
+            </div>
+            <div id="travelDocsList" class="space-y-2 mb-2 mt-2" style="display:${tripObj.travelDocsCollapsed ? 'none' : 'block'}"></div>
+            <div id="travelDocsAddRow" class="flex gap-2 mt-2" style="display:${tripObj.travelDocsCollapsed ? 'none' : 'flex'}">
+                <input id="newTravelDocName" class="input w-48 px-2 py-1 rounded border bg-gray-800 text-white" type="text" placeholder="שם המסמך..." />
+                <input id="newTravelDocUrl" class="input w-64 px-2 py-1 rounded border bg-gray-800 text-blue-200" type="url" placeholder="קישור..." />
+                <input id="newTravelDocImg" class="input px-2 py-1 rounded border bg-gray-800 text-white" type="file" accept="image/*" />
+                <button id="addTravelDocBtn" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"><i class="fa-solid fa-plus"></i></button>
+            </div>
+        `;
+        // Collapse/expand button logic for travel docs
+        travelDocsDiv.querySelector('.travelDocsHeader').onclick = function() {
+            tripObj.travelDocsCollapsed = !tripObj.travelDocsCollapsed;
+            saveTripToStorageDebounced();
+            // Toggle UI
+            const addRow = travelDocsDiv.querySelector('#travelDocsAddRow');
+            const list = travelDocsDiv.querySelector('#travelDocsList');
+            const icon = travelDocsDiv.querySelector('#collapseTravelDocsBtn i');
+            if (tripObj.travelDocsCollapsed) {
+                addRow.style.display = 'none';
+                list.style.display = 'none';
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            } else {
+                addRow.style.display = 'flex';
+                list.style.display = 'block';
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            }
+        };
+        container.appendChild(travelDocsDiv);
+
+        // Render travel documents
+        function renderTravelDocs() {
+            const list = travelDocsDiv.querySelector('#travelDocsList');
+            list.innerHTML = '';
+            travelDocs.forEach((doc, idx) => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center gap-2 bg-gray-800 rounded px-2 py-1';
+                item.innerHTML = `
+                    <input class="edit-doc-name w-40 px-2 py-1 rounded border bg-gray-800 text-white" type="text" value="${doc.name || ''}" placeholder="שם" />
+                    <input class="edit-doc-url w-64 px-2 py-1 rounded border bg-gray-800 text-blue-200" type="url" value="${doc.url || ''}" placeholder="קישור..." />
+                    <button class="open-doc-url-btn text-green-400 hover:text-green-600 ml-1" title="פתח קישור" style="${doc.url && doc.url.trim() ? '' : 'opacity:0.3;pointer-events:none;'}"><i class="fa-solid fa-link"></i></button>
+                    <label class="cursor-pointer text-blue-300 hover:text-blue-500 ml-1" title="העלה תמונה">
+                        <i class="fa-solid fa-image"></i>
+                        <input type="file" class="edit-doc-img hidden" accept="image/*" />
+                    </label>
+                    <span class="doc-img-preview" style="display:${doc.image ? 'inline-block' : 'none'};cursor:pointer;">
+                        ${doc.image ? `<img src="${doc.image}" alt="תמונה" style="width:32px;height:32px;object-fit:cover;border-radius:4px;" />` : ''}
+                    </span>
+                    <button class="delete-doc-btn text-red-400 hover:text-red-600" title="מחק"><i class="fa-solid fa-trash"></i></button>
+                `;
+                // Edit name
+                item.querySelector('.edit-doc-name').onchange = function(e) {
+                    travelDocs[idx].name = e.target.value;
+                    saveTripToStorageDebounced();
+                };
+                // Edit url
+                const urlInput = item.querySelector('.edit-doc-url');
+                const urlBtn = item.querySelector('.open-doc-url-btn');
+                urlInput.oninput = function(e) {
+                    travelDocs[idx].url = e.target.value;
+                    if (urlBtn) {
+                        if (e.target.value && e.target.value.trim()) {
+                            urlBtn.style.opacity = '';
+                            urlBtn.style.pointerEvents = '';
+                        } else {
+                            urlBtn.style.opacity = '0.3';
+                            urlBtn.style.pointerEvents = 'none';
+                        }
+                    }
+                };
+                urlInput.onchange = function(e) {
+                    travelDocs[idx].url = e.target.value;
+                    saveTripToStorageDebounced();
+                };
+                // Open url
+                urlBtn.onclick = function() {
+                    const url = travelDocs[idx].url;
+                    if (url && typeof url === 'string' && url.trim()) window.open(url, '_blank');
+                };
+                // Image upload
+                const imgInput = item.querySelector('.edit-doc-img');
+                imgInput.onchange = function(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        travelDocs[idx].image = ev.target.result;
+                        saveTripToStorageDebounced();
+                        renderTravelDocs();
+                    };
+                    reader.readAsDataURL(file);
+                };
+                // Image preview click (show larger)
+                const imgPreview = item.querySelector('.doc-img-preview');
+                if (imgPreview && doc.image) {
+                    imgPreview.onclick = function() {
+                        // Show modal with larger image
+                        const modal = document.createElement('div');
+                        modal.style = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;';
+                        modal.innerHTML = `<div style="background:#222;padding:16px;border-radius:8px;max-width:90vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;">
+                            <img src="${doc.image}" style="max-width:80vw;max-height:70vh;border-radius:8px;box-shadow:0 2px 12px #000;" />
+                            <button style="margin-top:12px;padding:6px 18px;background:#333;color:#fff;border:none;border-radius:4px;font-size:1.1em;cursor:pointer;" onclick="this.closest('div').parentNode.remove()">סגור</button>
+                        </div>`;
+                        document.body.appendChild(modal);
+                    };
+                }
+                // Delete
+                item.querySelector('.delete-doc-btn').onclick = function() {
+                    travelDocs.splice(idx, 1);
+                    saveTripToStorageDebounced();
+                    renderTravelDocs();
+                };
+                list.appendChild(item);
+            });
+        }
+        renderTravelDocs();
+        // Add new travel doc
+        travelDocsDiv.querySelector('#addTravelDocBtn').onclick = function() {
+            const nameInp = travelDocsDiv.querySelector('#newTravelDocName');
+            const urlInp = travelDocsDiv.querySelector('#newTravelDocUrl');
+            const imgInp = travelDocsDiv.querySelector('#newTravelDocImg');
+            const name = nameInp.value.trim();
+            const url = urlInp.value.trim();
+            const file = imgInp.files[0];
+            if (!name) return;
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    travelDocs.push({ name, url, image: ev.target.result });
+                    nameInp.value = '';
+                    urlInp.value = '';
+                    imgInp.value = '';
+                    saveTripToStorageDebounced();
+                    renderTravelDocs();
+                };
+                reader.readAsDataURL(file);
+            } else {
+                travelDocs.push({ name, url, image: '' });
+                nameInp.value = '';
+                urlInp.value = '';
+                imgInp.value = '';
+                saveTripToStorageDebounced();
+                renderTravelDocs();
+            }
+        };
+
+        // --- Todo List UI ---
         const todos = tripObj.todos;
         const todoDiv = document.createElement('div');
         todoDiv.className = 'bg-gray-900 rounded-lg p-2 shadow w-full border border-gray-600 text-gray-800 text-right';
@@ -1508,7 +1668,29 @@
             bodyHtml += `<div class="attr">אין פעילויות</div>`;
         }
         bodyHtml += `</div>`;
+
     });
+
+    // Travel Documents section (at end)
+    if (_trip && Array.isArray(_trip.travelDocs) && _trip.travelDocs.length) {
+        bodyHtml += `<div class="day" style="margin-top:32px;background:#181f2a;">
+            <h2 style="margin-bottom:10px;"><i class='fa-solid fa-file-lines' style='color:#60a5fa;'></i> מסמכי נסיעה</h2>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+                ${_trip.travelDocs.map((doc, i) => {
+                    const url = doc.url && doc.url.trim();
+                    const linkIcon = `<a href="${url ? doc.url : '#'}" target="_blank" rel="noopener" style="margin-left:8px;pointer-events:${url ? 'auto' : 'none'};" tabindex="-1">🔗</a>`;
+                    const imgIcon = doc.image && doc.image.trim() ? `<a href="${doc.image}" target="_blank" rel="noopener" style="margin-left:8px;"><i class='fa-solid fa-image' style='color:#60a5fa;font-size:1.2em;'></i></a>` : '';
+                    const imgThumb = doc.image && doc.image.trim() ? `<img src="${doc.image}" alt="תמונה" class="travel-doc-img-thumb" data-doc-idx="${i}" style="width:38px;height:38px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-left:8px;border:1px solid #333;cursor:pointer;" />` : '';
+                    return `<div style='display:flex;align-items:center;gap:10px;background:#232b3a;padding:8px 12px;border-radius:8px;'>
+                        ${imgThumb}
+                        <span style='font-weight:bold;font-size:1.1em;color:#e5e7eb;'>${doc.name ? escHtml(doc.name) : ''}</span>
+                        ${linkIcon}
+                        ${imgIcon}
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+    }
 
         // Compose full HTML
         // Add a simple modal and script to enable viewing images in the exported HTML
@@ -1529,13 +1711,15 @@
                         const content = document.getElementById('exportImageModalContent');
                         content.innerHTML = '<img src="'+data+'" style="max-width:100%;max-height:70vh;border-radius:6px;" />';
                         modal.style.display = 'flex';
-                        // wire delete
-                        const del = document.getElementById('exportImageModalDelete');
-                        del.onclick = function(){
-                            // remove image from all buttons that match this data URL
-                            document.querySelectorAll('.img-btn').forEach(b=>{ if (b.getAttribute('data-img')===data) { b.removeAttribute('data-img'); b.style.display='none'; } });
-                            modal.style.display='none';
-                        };
+                    }
+                    // Travel doc image click
+                    if (e.target && e.target.classList && e.target.classList.contains('travel-doc-img-thumb')) {
+                        const src = e.target.getAttribute('src');
+                        if (!src) return;
+                        const modal = document.getElementById('exportImageModal');
+                        const content = document.getElementById('exportImageModalContent');
+                        content.innerHTML = '<img src="'+src+'" style="max-width:100%;max-height:70vh;border-radius:6px;" />';
+                        modal.style.display = 'flex';
                     }
                     if (e.target && e.target.id === 'exportImageModalClose') document.getElementById('exportImageModal').style.display='none';
                     // backdrop click closes
