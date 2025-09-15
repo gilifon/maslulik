@@ -667,9 +667,7 @@
             </div>
             <div id="travelDocsList" class="space-y-2 mb-2 mt-2" style="display:${tripObj.travelDocsCollapsed ? 'none' : 'block'}"></div>
             <div id="travelDocsAddRow" class="flex gap-2 mt-2" style="display:${tripObj.travelDocsCollapsed ? 'none' : 'flex'}">
-                <input id="newTravelDocName" class="input w-48 px-2 py-1 rounded border bg-gray-800 text-white" type="text" placeholder="שם המסמך..." />
-                <input id="newTravelDocUrl" class="input w-64 px-2 py-1 rounded border bg-gray-800 text-blue-200" type="url" placeholder="קישור..." />
-                <input id="newTravelDocImg" class="input px-2 py-1 rounded border bg-gray-800 text-white" type="file" accept="image/*" />
+                <input id="newTravelDocName" class="input w-full px-2 py-1 rounded border bg-gray-800 text-white" type="text" placeholder="שם המסמך..." />
                 <button id="addTravelDocBtn" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"><i class="fa-solid fa-plus"></i></button>
             </div>
         `;
@@ -703,15 +701,15 @@
                 const item = document.createElement('div');
                 item.className = 'flex items-center gap-2 bg-gray-800 rounded px-2 py-1';
                 item.innerHTML = `
-                    <input class="edit-doc-name w-40 px-2 py-1 rounded border bg-gray-800 text-white" type="text" value="${doc.name || ''}" placeholder="שם" />
-                    <input class="edit-doc-url w-64 px-2 py-1 rounded border bg-gray-800 text-blue-200" type="url" value="${doc.url || ''}" placeholder="קישור..." />
+                    <input class="edit-doc-name w-full px-2 py-1 rounded border bg-gray-800 text-white" type="text" value="${doc.name || ''}" placeholder="שם" />
+                    <input class="edit-doc-url w-128 px-2 py-1 rounded border bg-gray-800 text-blue-200 text-left" type="url" value="${doc.url || ''}" placeholder="קישור..." />
                     <button class="open-doc-url-btn text-green-400 hover:text-green-600 ml-1" title="פתח קישור" style="${doc.url && doc.url.trim() ? '' : 'opacity:0.3;pointer-events:none;'}"><i class="fa-solid fa-link"></i></button>
-                    <label class="cursor-pointer text-blue-300 hover:text-blue-500 ml-1" title="העלה תמונה">
-                        <i class="fa-solid fa-image"></i>
+                    <label class="cursor-pointer text-blue-300 hover:text-blue-500 ml-1 flex items-center" title="העלה תמונה">
+                        <i class="fa-solid fa-image fa-lg"></i>
                         <input type="file" class="edit-doc-img hidden" accept="image/*" />
                     </label>
-                    <span class="doc-img-preview" style="display:${doc.image ? 'inline-block' : 'none'};cursor:pointer;">
-                        ${doc.image ? `<img src="${doc.image}" alt="תמונה" style="width:32px;height:32px;object-fit:cover;border-radius:4px;" />` : ''}
+                    <span class="doc-img-preview ml-2 mr-2" style="display:${doc.image ? 'inline-block' : 'none'};cursor:pointer;">
+                        ${doc.image ? `<img src="${doc.image}" alt="תמונה" style="width:32px;height:32px;border-radius:4px;margin:0 0 0 25px;padding: 0px;" />` : ''}
                     </span>
                     <button class="delete-doc-btn text-red-400 hover:text-red-600" title="מחק"><i class="fa-solid fa-trash"></i></button>
                 `;
@@ -789,31 +787,13 @@
         // Add new travel doc
         travelDocsDiv.querySelector('#addTravelDocBtn').onclick = function() {
             const nameInp = travelDocsDiv.querySelector('#newTravelDocName');
-            const urlInp = travelDocsDiv.querySelector('#newTravelDocUrl');
-            const imgInp = travelDocsDiv.querySelector('#newTravelDocImg');
             const name = nameInp.value.trim();
-            const url = urlInp.value.trim();
-            const file = imgInp.files[0];
             if (!name) return;
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(ev) {
-                    travelDocs.push({ name, url, image: ev.target.result });
-                    nameInp.value = '';
-                    urlInp.value = '';
-                    imgInp.value = '';
-                    saveTripToStorageDebounced();
-                    renderTravelDocs();
-                };
-                reader.readAsDataURL(file);
-            } else {
-                travelDocs.push({ name, url, image: '' });
-                nameInp.value = '';
-                urlInp.value = '';
-                imgInp.value = '';
-                saveTripToStorageDebounced();
-                renderTravelDocs();
-            }
+            travelDocs.push({ name, url: '', image: '' });
+            nameInp.value = '';
+            saveTripToStorageDebounced();
+            renderTravelDocs();
+            
         };
 
         // --- Todo List UI ---
@@ -865,7 +845,7 @@
                     <span class="cursor-move px-1 text-blue-400 order-btn" title="שנה סדר" draggable="true"><i class="fa-solid fa-bars"></i></span>
                     <button class="toggle-todo-btn ${todo.done ? 'text-green-400' : 'text-gray-400'}" title="סמן כבוצע"><i class="fa-solid fa-check"></i></button>
                     <input class="edit-todo-input w-full px-2 py-1 rounded border bg-gray-800 text-white" type="text" value="${todo.text}" />
-                    <input class="edit-todo-url w-48 px-2 py-1 rounded border bg-gray-800 text-blue-200 ml-2" type="url" placeholder="קישור..." value="${todo.url ? todo.url : ''}" />
+                    <input class="edit-todo-url w-128 px-2 py-1 rounded border bg-gray-800 text-blue-200 ml-2 text-left" type="url" placeholder="קישור..." value="${todo.url ? todo.url : ''}" />
                     <button class="open-todo-url-btn text-green-400 hover:text-green-600 ml-1" title="פתח קישור" style="${todo.url && todo.url.trim() ? '' : 'opacity:0.3;pointer-events:none;'}"><i class="fa-solid fa-link"></i></button>
                     <button class="delete-todo-btn text-red-400 hover:text-red-600" title="מחק"><i class="fa-solid fa-trash"></i></button>
                 `;
