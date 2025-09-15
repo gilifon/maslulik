@@ -764,10 +764,15 @@
                         // Show modal with larger image
                         const modal = document.createElement('div');
                         modal.style = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;';
-                        modal.innerHTML = `<div style="background:#222;padding:16px;border-radius:8px;max-width:90vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;">
+                        modal.innerHTML = `<div class="doc-modal-content" style="background:#222;padding:16px;border-radius:8px;max-width:90vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;">
                             <img src="${doc.image}" style="max-width:80vw;max-height:70vh;border-radius:8px;box-shadow:0 2px 12px #000;" />
                             <button style="margin-top:12px;padding:6px 18px;background:#333;color:#fff;border:none;border-radius:4px;font-size:1.1em;cursor:pointer;" onclick="this.closest('div').parentNode.remove()">סגור</button>
                         </div>`;
+                        // Close modal when clicking outside the content
+                        modal.addEventListener('click', function(e) {
+                            const content = modal.querySelector('.doc-modal-content');
+                            if (!content.contains(e.target)) modal.remove();
+                        });
                         document.body.appendChild(modal);
                     };
                 }
